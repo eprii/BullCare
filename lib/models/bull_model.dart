@@ -1,3 +1,5 @@
+// TODO: tambahkan fromMap(), toMap(), copyWith(), dan fromDocument() secara seragam ke semua model setelah field database FIX.
+
 class BullModel {
   final String id;
   final String kode_bull;
