@@ -1,0 +1,35 @@
+{
+  "name": "BullCare",
+  "short_name": "BullCare",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F6F7F3",
+  "theme_color": "#2F6B4F",
+  "description": "Aplikasi manajemen pemeliharaan bull Balai Inseminasi Buatan.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
