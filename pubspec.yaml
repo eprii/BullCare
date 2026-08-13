@@ -60,3 +60,13 @@ flutter:
     - assets/report/report_pdf_icon.png
     - assets/report/report_word_icon.png
     - assets/bulls/
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+
+  image_path: "assets/images/icon/ic_launcher.png"
+
+  adaptive_icon_background: "assets/images/icon/ic_launcher_background.png"
+  adaptive_icon_foreground: "assets/images/icon/ic_launcher_foreground.png"
+  adaptive_icon_monochrome: "assets/images/icon/ic_launcher_monochrome.png"
