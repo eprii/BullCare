@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "bullcare"
-  }
+  },
+  "targets": {
+    "bullcare": {
+      "hosting": {
+        "bullcare": [
+          "bullcare"
+        ],
+        "bullcare-bib": [
+          "bullcare-bib"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
