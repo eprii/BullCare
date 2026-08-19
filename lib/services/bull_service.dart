@@ -56,6 +56,7 @@ class BullService {
     required String fotoBase64,
     String fotoBackgroundBase64 = '',
     required String status,
+    required String statusSni,
   }) async {
     final DateTime now = DateTime.now();
     final DocumentReference<Map<String, dynamic>> ref = await _bulls.add(<String, dynamic>{
@@ -68,6 +69,7 @@ class BullService {
       'foto_base64': fotoBase64.trim(),
       'foto_background_base64': fotoBackgroundBase64.trim(),
       'status': status,
+      'status_sni': statusSni.trim(),
       'sanitasi_reminder_hour': 8,
       'sanitasi_reminder_minute': 0,
       'created_at': Timestamp.fromDate(now),
@@ -87,6 +89,7 @@ class BullService {
       'foto_base64': bull.foto_base64.trim(),
       'foto_background_base64': bull.foto_background_base64.trim(),
       'status': bull.status,
+      'status_sni': bull.status_sni.trim(),
       'sanitasi_reminder_hour': bull.sanitasi_reminder_hour,
       'sanitasi_reminder_minute': bull.sanitasi_reminder_minute,
       'updated_at': Timestamp.fromDate(DateTime.now()),

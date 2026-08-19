@@ -88,6 +88,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 
   Future<void> _add() async {
+    if (!widget.user.isPetugas) return;
+
     final BullModel? bull = await Navigator.of(context).push<BullModel>(
       MaterialPageRoute<BullModel>(
         builder: (_) => BullListPage(
@@ -114,6 +116,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 
   Future<void> _edit(BullModel bull, ActivityRecord record) async {
+    if (!widget.user.isPetugas) return;
+
     final bool? saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => ActivityFormPage(
@@ -135,6 +139,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 
   Future<void> _delete(ActivityRecord record, BullModel? bull) async {
+    if (!widget.user.isPetugas) return;
+
     final bool confirmed = await showConfirmationDialog(
       context,
       title: 'Hapus aktivitas?',
@@ -225,7 +231,9 @@ class _ActivityListPageState extends State<ActivityListPage> {
                           icon: Icons.history_toggle_off,
                           title: 'Belum ada $selectedLabel',
                           message: _filter.isEmpty
-                              ? 'Pilih bull dan catat aktivitas pemeliharaan.'
+                              ? widget.user.isPetugas
+                                  ? 'Pilih bull dan catat aktivitas pemeliharaan.'
+                                  : 'Belum ada aktivitas pemeliharaan yang dapat ditampilkan.'
                               : 'Belum ada aktivitas pada kategori yang dipilih.',
                           action: widget.user.isPetugas
                               ? FilledButton.icon(

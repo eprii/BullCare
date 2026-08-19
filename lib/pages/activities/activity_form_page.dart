@@ -12,6 +12,7 @@ import '../../utils/app_feedback.dart';
 import '../../utils/confirmation_dialog.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_page_container.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/bull_avatar.dart';
 
 class ActivityFormPage extends StatefulWidget {
@@ -197,6 +198,14 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   }
 
   Future<void> _save() async {
+    if (!widget.user.isPetugas) {
+      AppFeedback.showError(
+        context,
+        'Supervisor hanya memiliki akses lihat aktivitas.',
+      );
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     final bool validForm = _formKey.currentState!.validate();
     final bool validBoolean = _validateBooleanFields();
@@ -257,6 +266,23 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.user.isPetugas) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(title: const Text('Aktivitas')),
+        body: const AppPageContainer(
+          maxWidth: 680,
+          child: Center(
+            child: EmptyState(
+              icon: Icons.visibility_outlined,
+              title: 'Mode Supervisor',
+              message: 'Supervisor hanya dapat melihat riwayat dan detail aktivitas tanpa menambah atau mengubah data.',
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(

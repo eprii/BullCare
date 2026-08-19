@@ -1,3 +1,4 @@
+import '../utils/bull_sni_status.dart';
 import '../utils/bull_status.dart';
 import '../utils/firestore_utils.dart';
 
@@ -12,6 +13,7 @@ class BullModel {
   final String foto_base64;
   final String foto_background_base64;
   final String status;
+  final String status_sni;
   final int sanitasi_reminder_hour;
   final int sanitasi_reminder_minute;
   final DateTime created_at;
@@ -28,6 +30,7 @@ class BullModel {
     this.foto_base64 = '',
     this.foto_background_base64 = '',
     required this.status,
+    this.status_sni = '',
     this.sanitasi_reminder_hour = 8,
     this.sanitasi_reminder_minute = 0,
     required this.created_at,
@@ -46,6 +49,7 @@ class BullModel {
       foto_base64: map['foto_base64']?.toString() ?? '',
       foto_background_base64: map['foto_background_base64']?.toString() ?? '',
       status: BullStatus.normalize(map['status']?.toString()),
+      status_sni: BullSniStatus.normalize(map['status_sni']?.toString()),
       sanitasi_reminder_hour: _parseReminderHour(map['sanitasi_reminder_hour']),
       sanitasi_reminder_minute: _parseReminderMinute(map['sanitasi_reminder_minute']),
       created_at: dateTimeFromFirestore(map['created_at']),
@@ -64,6 +68,7 @@ class BullModel {
       'foto_base64': foto_base64,
       'foto_background_base64': foto_background_base64,
       'status': status,
+      'status_sni': status_sni,
       'sanitasi_reminder_hour': sanitasi_reminder_hour,
       'sanitasi_reminder_minute': sanitasi_reminder_minute,
       'created_at': created_at,
@@ -82,6 +87,7 @@ class BullModel {
     String? foto_base64,
     String? foto_background_base64,
     String? status,
+    String? status_sni,
     int? sanitasi_reminder_hour,
     int? sanitasi_reminder_minute,
     DateTime? created_at,
@@ -99,6 +105,7 @@ class BullModel {
       foto_background_base64:
           foto_background_base64 ?? this.foto_background_base64,
       status: status ?? this.status,
+      status_sni: status_sni ?? this.status_sni,
       sanitasi_reminder_hour:
           sanitasi_reminder_hour ?? this.sanitasi_reminder_hour,
       sanitasi_reminder_minute:

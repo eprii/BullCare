@@ -4,17 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../models/bull_model.dart';
+import '../../models/user_model.dart';
 import '../../services/bull_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_feedback.dart';
+import '../../utils/bull_sni_status.dart';
 import '../../utils/bull_status.dart';
 import '../../utils/confirmation_dialog.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_page_container.dart';
+import '../../widgets/empty_state.dart';
 
 class BullFormPage extends StatefulWidget {
-  const BullFormPage({super.key, this.bull});
+  const BullFormPage({
+    super.key,
+    required this.user,
+    this.bull,
+  });
 
+  final UserModel user;
   final BullModel? bull;
 
   @override
@@ -33,8 +41,9 @@ class _BullFormPageState extends State<BullFormPage> {
   late final TextEditingController _breed;
   late final TextEditingController _age;
   late final TextEditingController _cage;
-  late final TextEditingController _strawColor;
+  String? _strawColor;
   late String _status;
+  String? _statusSni;
   String _photoBase64 = '';
   String _backgroundPhotoBase64 = '';
   bool _loading = false;
@@ -54,10 +63,12 @@ class _BullFormPageState extends State<BullFormPage> {
     _breed = TextEditingController(text: bull?.bangsa ?? '');
     _age = TextEditingController(text: bull?.umur ?? '');
     _cage = TextEditingController(text: bull?.nomor_kandang ?? '');
-    _strawColor = TextEditingController(text: bull?.warna_straw ?? '');
+    _strawColor = _initialStrawColor(bull?.warna_straw);
     _photoBase64 = bull?.foto_base64 ?? '';
     _backgroundPhotoBase64 = bull?.foto_background_base64 ?? '';
     _status = BullStatus.normalize(bull?.status);
+    final String normalizedSni = BullSniStatus.normalize(bull?.status_sni);
+    _statusSni = normalizedSni.isEmpty ? null : normalizedSni;
   }
 
   @override
@@ -67,7 +78,6 @@ class _BullFormPageState extends State<BullFormPage> {
     _breed.dispose();
     _age.dispose();
     _cage.dispose();
-    _strawColor.dispose();
     super.dispose();
   }
 
@@ -166,7 +176,86 @@ class _BullFormPageState extends State<BullFormPage> {
     return null;
   }
 
+  String? _initialStrawColor(String? value) {
+    final String current = value?.trim() ?? '';
+    if (current.isEmpty) return null;
+
+    for (final _StrawColorOption option in _strawColorOptions) {
+      if (option.label.toLowerCase() == current.toLowerCase()) {
+        return option.label;
+      }
+    }
+    return current;
+  }
+
+  List<_StrawColorOption> get _availableStrawColorOptions {
+    final String current = _strawColor?.trim() ?? '';
+    final bool known = _strawColorOptions.any(
+      (option) => option.label.toLowerCase() == current.toLowerCase(),
+    );
+    if (current.isEmpty || known) return _strawColorOptions;
+
+    return <_StrawColorOption>[
+      _StrawColorOption(current, const Color(0xFF9E9E9E)),
+      ..._strawColorOptions,
+    ];
+  }
+
+  Widget _strawColorDropdown() {
+    final List<_StrawColorOption> options = _availableStrawColorOptions;
+    final String? selected = _strawColor;
+
+    return DropdownButtonFormField<String>(
+      initialValue: selected,
+      isExpanded: true,
+      borderRadius: BorderRadius.circular(16),
+      dropdownColor: Colors.white,
+      menuMaxHeight: 360,
+      focusColor: AppTheme.primarySoft,
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: AppTheme.primary,
+      ),
+      decoration: const InputDecoration(
+        labelText: 'Warna straw',
+        prefixIcon: Icon(Icons.color_lens_outlined),
+      ),
+      selectedItemBuilder: (context) {
+        return options
+            .map(
+              (option) => Align(
+                alignment: Alignment.centerLeft,
+                child: _StrawColorRow(option: option),
+              ),
+            )
+            .toList(growable: false);
+      },
+      items: options
+          .map(
+            (option) => DropdownMenuItem<String>(
+              value: option.label,
+              child: _StrawColorRow(option: option),
+            ),
+          )
+          .toList(growable: false),
+      validator: (value) => Validators.requiredText(
+        value,
+        label: 'Warna straw',
+        maxLength: 50,
+      ),
+      onChanged: (value) => setState(() => _strawColor = value),
+    );
+  }
+
   Future<void> _save() async {
+    if (!widget.user.isPetugas) {
+      AppFeedback.showError(
+        context,
+        'Supervisor hanya memiliki akses lihat data bull.',
+      );
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     setState(() => _codeError = null);
 
@@ -227,10 +316,11 @@ class _BullFormPageState extends State<BullFormPage> {
             bangsa: _breed.text.trim(),
             umur: normalizedAge,
             nomor_kandang: _cage.text.trim(),
-            warna_straw: _strawColor.text.trim(),
+            warna_straw: _strawColor?.trim() ?? '',
             foto_base64: _photoBase64,
             foto_background_base64: _backgroundPhotoBase64,
             status: _status,
+            status_sni: _statusSni ?? '',
             updated_at: DateTime.now(),
           ),
         );
@@ -242,10 +332,11 @@ class _BullFormPageState extends State<BullFormPage> {
           bangsa: _breed.text,
           umur: normalizedAge,
           nomorKandang: _cage.text,
-          warnaStraw: _strawColor.text,
+          warnaStraw: _strawColor ?? '',
           fotoBase64: _photoBase64,
           fotoBackgroundBase64: _backgroundPhotoBase64,
           status: _status,
+          statusSni: _statusSni ?? '',
         );
         if (mounted) Navigator.of(context).pop(id);
       }
@@ -265,6 +356,23 @@ class _BullFormPageState extends State<BullFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.user.isPetugas) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(title: const Text('Data Bull')),
+        body: const AppPageContainer(
+          maxWidth: 680,
+          child: Center(
+            child: EmptyState(
+              icon: Icons.visibility_outlined,
+              title: 'Mode Supervisor',
+              message: 'Supervisor hanya dapat melihat data bull dan tidak dapat menambah atau mengubah data.',
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(title: Text(_editing ? 'Edit Data Bull' : 'Tambah Bull')),
@@ -359,12 +467,8 @@ class _BullFormPageState extends State<BullFormPage> {
                       next: true,
                       maxLength: 30,
                     ),
-                    _field(
-                      _strawColor,
-                      'Warna straw',
-                      Icons.color_lens_outlined,
-                      maxLength: 50,
-                    ),
+                    _strawColorDropdown(),
+                    const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       initialValue: _status,
                       isExpanded: true,
@@ -404,6 +508,41 @@ class _BullFormPageState extends State<BullFormPage> {
                       ],
                       onChanged: (value) {
                         setState(() => _status = value ?? BullStatus.sehat);
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      initialValue: _statusSni,
+                      isExpanded: true,
+                      borderRadius: BorderRadius.circular(16),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 240,
+                      focusColor: AppTheme.primarySoft,
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppTheme.primary,
+                      ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                      decoration: const InputDecoration(
+                        labelText: 'Status Sertifikasi SNI',
+                        prefixIcon: Icon(Icons.verified_outlined),
+                      ),
+                      items: BullSniStatus.values
+                          .map(
+                            (value) => DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(BullSniStatus.label(value)),
+                            ),
+                          )
+                          .toList(growable: false),
+                      validator: (value) => BullSniStatus.isValid(value)
+                          ? null
+                          : 'Status Sertifikasi SNI wajib dipilih.',
+                      onChanged: (value) {
+                        setState(() => _statusSni = value);
                       },
                     ),
                   ],
@@ -502,6 +641,72 @@ class _BullFormPageState extends State<BullFormPage> {
         ),
         validator: resolvedValidator,
       ),
+    );
+  }
+}
+
+const List<_StrawColorOption> _strawColorOptions = <_StrawColorOption>[
+  _StrawColorOption('Putih', Color(0xFFFFFFFF), needsBorder: true),
+  _StrawColorOption('Krim', Color(0xFFFFE4CC)),
+  _StrawColorOption('Hitam', Color(0xFF242424)),
+  _StrawColorOption('Pink', Color(0xFFF58BD8)),
+  _StrawColorOption('Merah', Color(0xFFFF6253)),
+  _StrawColorOption('Hijau', Color(0xFF4FAE64)),
+  _StrawColorOption('Hijau Pudar', Color(0xFFA8D7AE)),
+  _StrawColorOption('Kuning', Color(0xFFF4C542)),
+  _StrawColorOption('Kuning Pudar', Color(0xFFFFED9B)),
+  _StrawColorOption('Oranye', Color(0xFFFFA45B)),
+  _StrawColorOption('Biru', Color(0xFF6EA6F4)),
+  _StrawColorOption('Biru Gelap', Color(0xFF315A9E)),
+  _StrawColorOption('Biru Langit', Color(0xFF87CEEB)),
+  _StrawColorOption('Ungu', Color(0xFFC679E5)),
+  _StrawColorOption('Cokelat', Color(0xFF9A6A4A)),
+];
+
+class _StrawColorOption {
+  const _StrawColorOption(
+    this.label,
+    this.color, {
+    this.needsBorder = false,
+  });
+
+  final String label;
+  final Color color;
+  final bool needsBorder;
+}
+
+class _StrawColorRow extends StatelessWidget {
+  const _StrawColorRow({required this.option});
+
+  final _StrawColorOption option;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            color: option.color,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: option.needsBorder
+                  ? const Color(0xFFD6D8D5)
+                  : option.color,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            option.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

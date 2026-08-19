@@ -7,6 +7,7 @@ import '../../models/user_model.dart';
 import '../../services/bull_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_feedback.dart';
+import '../../utils/bull_sni_status.dart';
 import '../../utils/bull_status.dart';
 import '../../widgets/app_page_container.dart';
 import '../../widgets/empty_state.dart';
@@ -36,7 +37,8 @@ class _BullListPageState extends State<BullListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   String _statusFilter = '';
-  String _nameFilter = '';
+  String _breedFilter = '';
+  _BullSortMode _sortMode = _BullSortMode.none;
 
   @override
   void dispose() {
@@ -45,8 +47,12 @@ class _BullListPageState extends State<BullListPage> {
   }
 
   Future<void> _addBull() async {
+    if (!widget.user.isPetugas) return;
+
     final String? id = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(builder: (_) => const BullFormPage()),
+      MaterialPageRoute<String>(
+        builder: (_) => BullFormPage(user: widget.user),
+      ),
     );
     if (id != null && mounted) {
       widget.onDataChanged?.call();
@@ -107,7 +113,7 @@ class _BullListPageState extends State<BullListPage> {
         }
 
         final String normalizedQuery = _query.trim().toLowerCase();
-        final String normalizedNameFilter = _nameFilter.trim().toLowerCase();
+        final String normalizedBreedFilter = _breedFilter.trim().toLowerCase();
         final List<BullModel> bulls = (snapshot.data ?? <BullModel>[])
             .where((bull) {
               final String haystack =
@@ -117,22 +123,26 @@ class _BullListPageState extends State<BullListPage> {
                   haystack.contains(normalizedQuery);
               final bool matchesStatus = _statusFilter.isEmpty ||
                   BullStatus.normalize(bull.status) == _statusFilter;
-              final bool matchesName = normalizedNameFilter.isEmpty ||
-                  bull.nama.toLowerCase().contains(normalizedNameFilter);
-              return matchesQuery && matchesStatus && matchesName;
+              final bool matchesBreed = normalizedBreedFilter.isEmpty ||
+                  bull.bangsa.trim().toLowerCase() == normalizedBreedFilter;
+              return matchesQuery && matchesStatus && matchesBreed;
             })
             .toList();
 
+        _sortBulls(bulls);
+
         final bool noFilter = _query.isEmpty &&
             _statusFilter.isEmpty &&
-            _nameFilter.isEmpty;
+            _breedFilter.isEmpty;
 
         if (bulls.isEmpty) {
           return EmptyState(
             icon: Icons.search_off_rounded,
             title: noFilter ? 'Belum ada data bull' : 'Bull tidak ditemukan',
             message: noFilter
-                ? 'Tambahkan data bull pertama untuk mulai mencatat aktivitas pemeliharaan.'
+                ? widget.user.isPetugas
+                    ? 'Tambahkan data bull pertama untuk mulai mencatat aktivitas pemeliharaan.'
+                    : 'Belum ada data bull yang dapat ditampilkan.'
                 : 'Ubah pencarian atau filter dan coba kembali.',
             action: widget.user.isPetugas && noFilter
                 ? FilledButton.icon(
@@ -248,7 +258,8 @@ class _BullListPageState extends State<BullListPage> {
 
   Widget _filterButton() {
     final int activeCount = (_statusFilter.isNotEmpty ? 1 : 0) +
-        (_nameFilter.isNotEmpty ? 1 : 0);
+        (_breedFilter.isNotEmpty ? 1 : 0) +
+        (_sortMode != _BullSortMode.none ? 1 : 0);
     final bool filterActive = activeCount > 0;
 
     return InkWell(
@@ -313,10 +324,60 @@ class _BullListPageState extends State<BullListPage> {
     );
   }
 
+  void _sortBulls(List<BullModel> bulls) {
+    switch (_sortMode) {
+      case _BullSortMode.nameAsc:
+        bulls.sort((a, b) => _compareNames(a, b));
+        break;
+      case _BullSortMode.nameDesc:
+        bulls.sort((a, b) => _compareNames(b, a));
+        break;
+      case _BullSortMode.ageAsc:
+        bulls.sort((a, b) => _compareAges(a, b, ascending: true));
+        break;
+      case _BullSortMode.ageDesc:
+        bulls.sort((a, b) => _compareAges(a, b, ascending: false));
+        break;
+      case _BullSortMode.none:
+        break;
+    }
+  }
+
+  int _compareNames(BullModel a, BullModel b) {
+    final String nameA = a.nama.trim().toLowerCase();
+    final String nameB = b.nama.trim().toLowerCase();
+    final int nameResult = nameA.compareTo(nameB);
+    if (nameResult != 0) return nameResult;
+    return a.kode_bull.trim().toLowerCase().compareTo(
+          b.kode_bull.trim().toLowerCase(),
+        );
+  }
+
+  int _compareAges(
+    BullModel a,
+    BullModel b, {
+    required bool ascending,
+  }) {
+    final double? ageA = _parseAge(a.umur);
+    final double? ageB = _parseAge(b.umur);
+
+    if (ageA == null && ageB == null) return _compareNames(a, b);
+    if (ageA == null) return 1;
+    if (ageB == null) return -1;
+
+    final int result = ageA.compareTo(ageB);
+    if (result == 0) return _compareNames(a, b);
+    return ascending ? result : -result;
+  }
+
+  double? _parseAge(String value) {
+    return double.tryParse(value.trim().replaceAll(',', '.'));
+  }
+
   Future<void> _openFilterSheet() async {
-    final TextEditingController nameController =
-        TextEditingController(text: _nameFilter);
     String tempStatus = _statusFilter;
+    String tempBreed = _breedFilter;
+    _BullSortMode tempSort = _sortMode;
 
     final _BullFilterResult? result =
         await showModalBottomSheet<_BullFilterResult>(
@@ -374,41 +435,104 @@ class _BullListPageState extends State<BullListPage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Nama bull',
+                          'Urutkan data',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 9,
+                          runSpacing: 9,
+                          children: <Widget>[
+                            _FilterOptionChip(
+                              label: 'Default',
+                              selected: tempSort == _BullSortMode.none,
+                              onTap: () => setSheetState(
+                                () => tempSort = _BullSortMode.none,
+                              ),
+                            ),
+                            _FilterOptionChip(
+                              label: 'Nama A–Z',
+                              selected: tempSort == _BullSortMode.nameAsc,
+                              onTap: () => setSheetState(
+                                () => tempSort = _BullSortMode.nameAsc,
+                              ),
+                            ),
+                            _FilterOptionChip(
+                              label: 'Nama Z–A',
+                              selected: tempSort == _BullSortMode.nameDesc,
+                              onTap: () => setSheetState(
+                                () => tempSort = _BullSortMode.nameDesc,
+                              ),
+                            ),
+                            _FilterOptionChip(
+                              label: 'Umur termuda',
+                              selected: tempSort == _BullSortMode.ageAsc,
+                              onTap: () => setSheetState(
+                                () => tempSort = _BullSortMode.ageAsc,
+                              ),
+                            ),
+                            _FilterOptionChip(
+                              label: 'Umur tertua',
+                              selected: tempSort == _BullSortMode.ageDesc,
+                              onTap: () => setSheetState(
+                                () => tempSort = _BullSortMode.ageDesc,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Bangsa',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        TextField(
-                          controller: nameController,
-                          textInputAction: TextInputAction.done,
-                          decoration: InputDecoration(
-                            hintText: 'Ketik nama bull...',
-                            prefixIcon: const Icon(Icons.badge_outlined),
-                            filled: true,
-                            fillColor: const Color(0xFFF7F7F5),
-                            border: OutlineInputBorder(
+                        StreamBuilder<List<BullModel>>(
+                          stream: _service.watchBulls(),
+                          builder: (context, snapshot) {
+                            final List<String> breeds = (snapshot.data ?? <BullModel>[])
+                                .map((bull) => bull.bangsa.trim())
+                                .where((breed) => breed.isNotEmpty)
+                                .toSet()
+                                .toList()
+                              ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+                            if (tempBreed.isNotEmpty && !breeds.contains(tempBreed)) {
+                              breeds.add(tempBreed);
+                              breeds.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+                            }
+
+                            return DropdownButtonFormField<String>(
+                              initialValue: tempBreed,
+                              isExpanded: true,
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE4E6E2),
+                              decoration: const InputDecoration(
+                                prefixIcon: Icon(Icons.category_outlined),
+                                filled: true,
+                                fillColor: Color(0xFFF7F7F5),
                               ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE4E6E2),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: AppTheme.primary,
-                                width: 1.3,
-                              ),
-                            ),
-                          ),
+                              items: <DropdownMenuItem<String>>[
+                                const DropdownMenuItem<String>(
+                                  value: '',
+                                  child: Text('Semua bangsa'),
+                                ),
+                                ...breeds.map(
+                                  (breed) => DropdownMenuItem<String>(
+                                    value: breed,
+                                    child: Text(breed),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setSheetState(() => tempBreed = value ?? '');
+                              },
+                            );
+                          },
                         ),
                         const SizedBox(height: 20),
                         const Text(
@@ -426,8 +550,7 @@ class _BullListPageState extends State<BullListPage> {
                             _FilterOptionChip(
                               label: 'Semua',
                               selected: tempStatus.isEmpty,
-                              onTap: () =>
-                                  setSheetState(() => tempStatus = ''),
+                              onTap: () => setSheetState(() => tempStatus = ''),
                             ),
                             ...BullStatus.values.map(
                               (String status) => _FilterOptionChip(
@@ -449,7 +572,8 @@ class _BullListPageState extends State<BullListPage> {
                                   Navigator.of(sheetContext).pop(
                                     const _BullFilterResult(
                                       status: '',
-                                      name: '',
+                                      breed: '',
+                                      sortMode: _BullSortMode.none,
                                     ),
                                   );
                                 },
@@ -464,7 +588,8 @@ class _BullListPageState extends State<BullListPage> {
                                   Navigator.of(sheetContext).pop(
                                     _BullFilterResult(
                                       status: tempStatus,
-                                      name: nameController.text.trim(),
+                                      breed: tempBreed,
+                                      sortMode: tempSort,
                                     ),
                                   );
                                 },
@@ -485,20 +610,28 @@ class _BullListPageState extends State<BullListPage> {
       },
     );
 
-    nameController.dispose();
     if (result == null || !mounted) return;
     setState(() {
       _statusFilter = result.status;
-      _nameFilter = result.name;
+      _breedFilter = result.breed;
+      _sortMode = result.sortMode;
     });
   }
+
 }
 
+enum _BullSortMode { none, nameAsc, nameDesc, ageAsc, ageDesc }
+
 class _BullFilterResult {
-  const _BullFilterResult({required this.status, required this.name});
+  const _BullFilterResult({
+    required this.status,
+    required this.breed,
+    required this.sortMode,
+  });
 
   final String status;
-  final String name;
+  final String breed;
+  final _BullSortMode sortMode;
 }
 
 class _FilterOptionChip extends StatelessWidget {
@@ -568,6 +701,14 @@ class _BullCard extends StatelessWidget {
   final int imageIndex;
   final VoidCallback onTap;
 
+  String _bullDisplayName(BullModel bull, String fallbackName) {
+    final String name = bull.nama.trim();
+    final String code = bull.kode_bull.trim();
+    if (name.isEmpty) return code.isEmpty ? fallbackName : code;
+    if (code.isEmpty) return name;
+    return '$name ($code)';
+  }
+
   @override
   Widget build(BuildContext context) {
     final String breed = bull.bangsa.trim().isEmpty ? '-' : bull.bangsa.trim();
@@ -623,7 +764,7 @@ class _BullCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        bull.kode_bull.trim().isEmpty ? name : bull.kode_bull,
+                        _bullDisplayName(bull, name),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -656,7 +797,14 @@ class _BullCard extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      _StatusBadge(status: bull.status),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: <Widget>[
+                          _StatusBadge(status: bull.status),
+                          _SniStatusBadge(statusSni: bull.status_sni),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -671,6 +819,46 @@ class _BullCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SniStatusBadge extends StatelessWidget {
+  const _SniStatusBadge({required this.statusSni});
+
+  final String statusSni;
+
+  @override
+  Widget build(BuildContext context) {
+    final String normalized = BullSniStatus.normalize(statusSni);
+    final bool certified = normalized == BullSniStatus.bersertifikasi;
+    final bool hasStatus = normalized.isNotEmpty;
+
+    final Color foreground = certified
+        ? const Color(0xFF176B3A)
+        : hasStatus
+            ? const Color(0xFF8A5A00)
+            : const Color(0xFF69716B);
+    final Color background = certified
+        ? const Color(0xFFE4F6EA)
+        : hasStatus
+            ? const Color(0xFFFFF4D8)
+            : const Color(0xFFF0F2F0);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        BullSniStatus.label(statusSni),
+        style: TextStyle(
+          color: foreground,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

@@ -9,6 +9,7 @@ import '../../models/user_model.dart';
 import '../../services/activity_service_registry.dart';
 import '../../services/bull_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/bull_sni_status.dart';
 import '../../utils/bull_status.dart';
 import '../../utils/app_date_utils.dart';
 import '../../utils/app_feedback.dart';
@@ -56,6 +57,8 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _addActivity(BullModel bull) async {
+    if (!widget.user.isPetugas) return;
+
     final String? activityLabel = await Navigator.of(context).push<String>(
       MaterialPageRoute<String>(
         builder: (_) => ActivityTypePage(bull: bull, user: widget.user),
@@ -72,6 +75,8 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _showBullActions(BullModel bull) async {
+    if (!widget.user.isPetugas) return;
+
     final String? action = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -164,8 +169,12 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _editBull(BullModel bull) async {
+    if (!widget.user.isPetugas) return;
+
     final String? id = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(builder: (_) => BullFormPage(bull: bull)),
+      MaterialPageRoute<String>(
+        builder: (_) => BullFormPage(user: widget.user, bull: bull),
+      ),
     );
     if (id != null && mounted) {
       widget.onDataChanged?.call();
@@ -174,6 +183,8 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _delete(BullModel bull) async {
+    if (!widget.user.isPetugas) return;
+
     final bool confirmed = await showConfirmationDialog(
       context,
       title: 'Hapus data bull?',
@@ -200,6 +211,8 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _editActivity(BullModel bull, ActivityRecord record) async {
+    if (!widget.user.isPetugas) return;
+
     final bool? saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => ActivityFormPage(
@@ -441,7 +454,6 @@ class _HeroCard extends StatelessWidget {
     final String normalizedStatus = BullStatus.normalize(bull.status);
     final bool healthy = normalizedStatus == BullStatus.sehat;
     final bool needsVaccine = normalizedStatus == BullStatus.butuhVaksin;
-    final bool hasPortrait = bull.foto_base64.trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,12 +464,6 @@ class _HeroCard extends StatelessWidget {
             clipBehavior: Clip.none,
             children: <Widget>[
               Positioned.fill(child: _BullHeroBackground(bull: bull)),
-              if (hasPortrait)
-                Positioned(
-                  right: 18,
-                  bottom: 18,
-                  child: _BullPortraitImage(encoded: bull.foto_base64),
-                ),
               Positioned(
                 right: 12,
                 bottom: 10,
@@ -551,47 +557,6 @@ class _BullHeroBackground extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _BullPortraitImage extends StatelessWidget {
-  const _BullPortraitImage({required this.encoded});
-
-  final String encoded;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 94,
-      height: 94,
-      padding: const EdgeInsets.all(5),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: _MemoryImageOrFallback(
-          encoded: encoded,
-          fallback: const ColoredBox(
-            color: Color(0xFFF1F5F1),
-            child: Center(
-              child: Icon(
-                Icons.agriculture_outlined,
-                size: 34,
-                color: AppTheme.primary,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -790,6 +755,12 @@ class _InformationCard extends StatelessWidget {
             icon: Icons.color_lens_outlined,
             label: 'Warna straw',
             value: bull.warna_straw,
+          ),
+          const Divider(height: 22),
+          _InfoRow(
+            icon: Icons.verified_outlined,
+            label: 'Status SNI',
+            value: BullSniStatus.label(bull.status_sni),
           ),
           const Divider(height: 22),
           _InfoRow(

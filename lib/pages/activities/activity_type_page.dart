@@ -6,6 +6,7 @@ import '../../models/user_model.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_page_container.dart';
 import '../../widgets/bull_avatar.dart';
+import '../../widgets/empty_state.dart';
 import 'activity_form_page.dart';
 
 class ActivityTypePage extends StatelessWidget {
@@ -20,6 +21,23 @@ class ActivityTypePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!user.isPetugas) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(title: const Text('Aktivitas')),
+        body: const AppPageContainer(
+          maxWidth: 760,
+          child: Center(
+            child: EmptyState(
+              icon: Icons.visibility_outlined,
+              title: 'Mode Supervisor',
+              message: 'Supervisor hanya dapat melihat aktivitas dan tidak dapat mencatat aktivitas baru.',
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(title: const Text('Pilih Jenis Aktivitas')),
