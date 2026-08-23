@@ -2,44 +2,47 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../utils/firestore_utils.dart';
 
-class PenampunganSemenModel {
+class PencegahanEktoparasitModel {
   final String id;
   final String bull_id;
   final DateTime tanggal;
-  final String kolektor;
-  final String volume;
-  final String p_tp;
-  final String jumlah_straw_yang_dihasilkan;
-  final String petugas_uid;
+  final String bahan;
+  final String alat;
+  final String tindakan;
   final String keterangan;
+  final String petugas_uid;
+  final String nama_petugas;
   final DateTime created_at;
   final DateTime updated_at;
 
-  const PenampunganSemenModel({
+  const PencegahanEktoparasitModel({
     required this.id,
     required this.bull_id,
     required this.tanggal,
-    required this.kolektor,
-    required this.volume,
-    required this.p_tp,
-    required this.jumlah_straw_yang_dihasilkan,
-    required this.petugas_uid,
+    required this.bahan,
+    required this.alat,
+    required this.tindakan,
     required this.keterangan,
+    required this.petugas_uid,
+    required this.nama_petugas,
     required this.created_at,
     required this.updated_at,
   });
 
-  factory PenampunganSemenModel.fromMap(String id, Map<String, dynamic> map) {
-    return PenampunganSemenModel(
+  factory PencegahanEktoparasitModel.fromMap(
+    String id,
+    Map<String, dynamic> map,
+  ) {
+    return PencegahanEktoparasitModel(
       id: id,
       bull_id: map['bull_id']?.toString() ?? '',
       tanggal: dateTimeFromFirestore(map['tanggal']),
-      kolektor: map['kolektor']?.toString() ?? '',
-      volume: map['volume']?.toString() ?? '',
-      p_tp: map['p_tp']?.toString() ?? '',
-      jumlah_straw_yang_dihasilkan: map['jumlah_straw_yang_dihasilkan']?.toString() ?? '',
-      petugas_uid: map['petugas_uid']?.toString() ?? '',
+      bahan: map['bahan']?.toString() ?? '',
+      alat: map['alat']?.toString() ?? '',
+      tindakan: map['tindakan']?.toString() ?? '',
       keterangan: map['keterangan']?.toString() ?? '',
+      petugas_uid: map['petugas_uid']?.toString() ?? '',
+      nama_petugas: map['nama_petugas']?.toString() ?? '',
       created_at: dateTimeFromFirestore(map['created_at']),
       updated_at: dateTimeFromFirestore(map['updated_at']),
     );
@@ -49,40 +52,40 @@ class PenampunganSemenModel {
     return <String, dynamic>{
       'bull_id': bull_id,
       'tanggal': Timestamp.fromDate(tanggal),
-      'kolektor': kolektor,
-      'volume': volume,
-      'p_tp': p_tp,
-      'jumlah_straw_yang_dihasilkan': jumlah_straw_yang_dihasilkan,
-      'petugas_uid': petugas_uid,
+      'bahan': bahan,
+      'alat': alat,
+      'tindakan': tindakan,
       'keterangan': keterangan,
+      'petugas_uid': petugas_uid,
+      'nama_petugas': nama_petugas,
       'created_at': Timestamp.fromDate(created_at),
       'updated_at': Timestamp.fromDate(updated_at),
     };
   }
 
-  PenampunganSemenModel copyWith({
+  PencegahanEktoparasitModel copyWith({
     String? id,
     String? bull_id,
     DateTime? tanggal,
-    String? kolektor,
-    String? volume,
-    String? p_tp,
-    String? jumlah_straw_yang_dihasilkan,
-    String? petugas_uid,
+    String? bahan,
+    String? alat,
+    String? tindakan,
     String? keterangan,
+    String? petugas_uid,
+    String? nama_petugas,
     DateTime? created_at,
     DateTime? updated_at,
   }) {
-    return PenampunganSemenModel(
+    return PencegahanEktoparasitModel(
       id: id ?? this.id,
       bull_id: bull_id ?? this.bull_id,
       tanggal: tanggal ?? this.tanggal,
-      kolektor: kolektor ?? this.kolektor,
-      volume: volume ?? this.volume,
-      p_tp: p_tp ?? this.p_tp,
-      jumlah_straw_yang_dihasilkan: jumlah_straw_yang_dihasilkan ?? this.jumlah_straw_yang_dihasilkan,
-      petugas_uid: petugas_uid ?? this.petugas_uid,
+      bahan: bahan ?? this.bahan,
+      alat: alat ?? this.alat,
+      tindakan: tindakan ?? this.tindakan,
       keterangan: keterangan ?? this.keterangan,
+      petugas_uid: petugas_uid ?? this.petugas_uid,
+      nama_petugas: nama_petugas ?? this.nama_petugas,
       created_at: created_at ?? this.created_at,
       updated_at: updated_at ?? this.updated_at,
     );

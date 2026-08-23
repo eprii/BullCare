@@ -57,6 +57,10 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+    match /pencegahan_ektoparasit/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isPetugas();
+    }
     match /pemotongan_bulu/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();

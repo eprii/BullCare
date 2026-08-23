@@ -112,6 +112,17 @@ class ActivityCatalog {
       ],
     ),
     ActivityDefinition(
+      collectionName: 'pencegahan_ektoparasit',
+      label: 'Pencegahan Ektoparasit',
+      icon: Icons.bug_report_outlined,
+      fields: <ActivityFieldDefinition>[
+        ActivityFieldDefinition(key: 'bahan', label: 'Bahan', type: ActivityFieldType.text),
+        ActivityFieldDefinition(key: 'alat', label: 'Alat', type: ActivityFieldType.text),
+        ActivityFieldDefinition(key: 'tindakan', label: 'Tindakan', type: ActivityFieldType.text),
+        ActivityFieldDefinition(key: 'keterangan', label: 'Keterangan', type: ActivityFieldType.multiline, required: false),
+      ],
+    ),
+    ActivityDefinition(
       collectionName: 'pemotongan_bulu',
       label: 'Pemotongan Bulu',
       icon: Icons.content_cut_outlined,
@@ -134,10 +145,11 @@ class ActivityCatalog {
       label: 'Penampungan Semen',
       icon: Icons.water_drop_outlined,
       fields: <ActivityFieldDefinition>[
-        ActivityFieldDefinition(key: 'av', label: 'AV', type: ActivityFieldType.text),
-        ActivityFieldDefinition(key: 'vaselin', label: 'Vaselin', type: ActivityFieldType.text),
-        ActivityFieldDefinition(key: 'suhu_av', label: 'Suhu', type: ActivityFieldType.decimal, suffix: '°C'),
-        ActivityFieldDefinition(key: 'volume_semen', label: 'Volume semen', type: ActivityFieldType.decimal, suffix: 'ml'),
+        ActivityFieldDefinition(key: 'kolektor', label: 'Kolektor', type: ActivityFieldType.text),
+        ActivityFieldDefinition(key: 'volume', label: 'Volume', type: ActivityFieldType.text),
+        ActivityFieldDefinition(key: 'p_tp', label: 'P/TP', type: ActivityFieldType.text),
+        ActivityFieldDefinition(key: 'jumlah_straw_yang_dihasilkan', label: 'Jumlah straw yang dihasilkan', type: ActivityFieldType.text),
+        ActivityFieldDefinition(key: 'keterangan', label: 'Keterangan', type: ActivityFieldType.multiline, required: false),
       ],
     ),
   ];
