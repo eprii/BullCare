@@ -1,0 +1,13 @@
+
+// Patch catatan:
+// File page produksi_distribusi_semen_beku_page.dart perlu menggunakan
+// ProduksiDistribusiSemenBekuService untuk penyimpanan Firestore.
+// Perubahan:
+// 1. Hapus field nama_pejantan.
+// 2. Input hanya:
+//    - kategori
+//    - bangsa
+//    - jumlah_pejantan
+//    - stock_tahun
+// 3. Ganti pemanggilan FirebaseFirestore langsung pada save()
+//    dengan ProduksiDistribusiSemenBekuService.saveData().

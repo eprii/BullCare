@@ -73,5 +73,9 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+    match /produksi_distribusi_semen_beku/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isPetugas();
+    }
   }
 }

@@ -98,7 +98,11 @@ class ActivityTypePage extends StatelessWidget {
                 return GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: ActivityCatalog.all.length,
+                  itemCount: ActivityCatalog.all
+                        .where((definition) =>
+                            definition.collectionName !=
+                            'produksi_distribusi_semen_beku')
+                        .length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: columns,
                     crossAxisSpacing: 12,
@@ -106,8 +110,13 @@ class ActivityTypePage extends StatelessWidget {
                     childAspectRatio: columns == 3 ? 1.25 : 1.0,
                   ),
                   itemBuilder: (context, index) {
+                    final List<ActivityDefinition> availableActivities = ActivityCatalog.all
+                        .where((definition) =>
+                            definition.collectionName !=
+                            'produksi_distribusi_semen_beku')
+                        .toList(growable: false);
                     final ActivityDefinition definition =
-                        ActivityCatalog.all[index];
+                        availableActivities[index];
                     return _ActivityTypeCard(
                       definition: definition,
                       onTap: () async {

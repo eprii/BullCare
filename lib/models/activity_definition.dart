@@ -152,6 +152,12 @@ class ActivityCatalog {
         ActivityFieldDefinition(key: 'keterangan', label: 'Keterangan', type: ActivityFieldType.multiline, required: false),
       ],
     ),
+    ActivityDefinition(
+      collectionName: 'produksi_distribusi_semen_beku',
+      label: 'Produksi & Distribusi Semen Beku',
+      icon: Icons.inventory_2_outlined,
+      fields: <ActivityFieldDefinition>[],
+    ),
   ];
 
   static ActivityDefinition byCollection(String collectionName) {

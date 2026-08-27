@@ -19,6 +19,7 @@ import '../bulls/bull_list_page.dart';
 import 'activity_detail_page.dart';
 import 'activity_form_page.dart';
 import 'activity_type_page.dart';
+import 'produksi_distribusi_semen_beku_page.dart';
 
 class ActivityListData {
   const ActivityListData({required this.records, required this.bulls});
@@ -179,7 +180,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(title: const Text('Riwayat Aktivitas')),
+      appBar: AppBar(title: const Text('Aktivitas')),
       body: FutureBuilder<ActivityListData>(
         future: _future,
         builder: (context, snapshot) {
@@ -216,6 +217,27 @@ class _ActivityListPageState extends State<ActivityListPage> {
           return AppPageContainer(
             child: Column(
               children: <Widget>[
+                _ProductionDistributionCard(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            ProduksiDistribusiSemenBekuPage(user: widget.user),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 18),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Riwayat Aktivitas',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 _ActivityCategoryFilter(
                   selectedCollection: _filter,
                   totalCount: data.records.length,
@@ -266,6 +288,69 @@ class _ActivityListPageState extends State<ActivityListPage> {
               child: const Icon(Icons.add_rounded, size: 30),
             )
           : null,
+    );
+  }
+}
+
+
+class _ProductionDistributionCard extends StatelessWidget {
+  const _ProductionDistributionCard({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.divider),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppTheme.primarySoft,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.science_outlined,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'Produksi & Distribusi Semen Beku',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Rekap produksi dan distribusi semen beku BIB',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+      ),
     );
   }
 }
