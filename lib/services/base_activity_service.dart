@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/activity_record.dart';
 
@@ -18,8 +19,18 @@ class BaseActivityService {
     required DateTime tanggal,
     required Map<String, dynamic> values,
   }) async {
+    print('========== DEBUG ACTIVITY ==========');
+    print('Collection  : $collectionName');
+    print('Bull ID     : $bullId');
+    print('Petugas UID : $petugasUid');
+    print('Auth UID    : ${FirebaseAuth.instance.currentUser?.uid}');
+    print('Values      : $values');
+    print('====================================');
+
     final DateTime now = DateTime.now();
-    final DocumentReference<Map<String, dynamic>> ref = await collection.add(<String, dynamic>{
+
+    final DocumentReference<Map<String, dynamic>> ref =
+        await collection.add(<String, dynamic>{
       ...values,
       'bull_id': bullId,
       'petugas_uid': petugasUid,
@@ -27,6 +38,7 @@ class BaseActivityService {
       'created_at': Timestamp.fromDate(now),
       'updated_at': Timestamp.fromDate(now),
     });
+
     return ref.id;
   }
 
@@ -46,25 +58,41 @@ class BaseActivityService {
     if (id.trim().isEmpty) {
       throw ArgumentError('ID aktivitas tidak boleh kosong.');
     }
+
     return collection.doc(id).delete();
   }
 
   Future<List<ActivityRecord>> getAll() async {
-    final QuerySnapshot<Map<String, dynamic>> snapshot = await collection.get();
+    final QuerySnapshot<Map<String, dynamic>> snapshot =
+        await collection.get();
+
     final List<ActivityRecord> records = snapshot.docs
-        .map((doc) => ActivityRecord.fromMap(doc.id, collectionName, doc.data()))
+        .map((doc) => ActivityRecord.fromMap(
+              doc.id,
+              collectionName,
+              doc.data(),
+            ))
         .toList();
+
     records.sort((a, b) => b.tanggal.compareTo(a.tanggal));
+
     return records;
   }
 
   Future<List<ActivityRecord>> getForBull(String bullId) async {
     final QuerySnapshot<Map<String, dynamic>> snapshot =
         await collection.where('bull_id', isEqualTo: bullId).get();
+
     final List<ActivityRecord> records = snapshot.docs
-        .map((doc) => ActivityRecord.fromMap(doc.id, collectionName, doc.data()))
+        .map((doc) => ActivityRecord.fromMap(
+              doc.id,
+              collectionName,
+              doc.data(),
+            ))
         .toList();
+
     records.sort((a, b) => b.tanggal.compareTo(a.tanggal));
+
     return records;
   }
 
@@ -78,18 +106,31 @@ class BaseActivityService {
         .orderBy('tanggal', descending: true)
         .limit(limit)
         .get();
+
     return snapshot.docs
-        .map((doc) => ActivityRecord.fromMap(doc.id, collectionName, doc.data()))
+        .map((doc) => ActivityRecord.fromMap(
+              doc.id,
+              collectionName,
+              doc.data(),
+            ))
         .toList(growable: false);
   }
 
   Future<Set<String>> getBullIdsRecordedOn(DateTime day) async {
     final DateTime start = DateTime(day.year, day.month, day.day);
     final DateTime end = start.add(const Duration(days: 1));
+
     final QuerySnapshot<Map<String, dynamic>> snapshot = await collection
-        .where('tanggal', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
-        .where('tanggal', isLessThan: Timestamp.fromDate(end))
+        .where(
+          'tanggal',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+        )
+        .where(
+          'tanggal',
+          isLessThan: Timestamp.fromDate(end),
+        )
         .get();
+
     return snapshot.docs
         .map((doc) => doc.data()['bull_id']?.toString() ?? '')
         .where((id) => id.isNotEmpty)

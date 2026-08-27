@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/activity_record.dart';
 import 'base_activity_service.dart';
+import 'bio_security_service.dart';
 import 'pemberian_obat_cacing_service.dart';
 import 'pemberian_pakan_service.dart';
 import 'pencegahan_ektoparasit_service.dart';
@@ -17,7 +18,8 @@ import 'sanitasi_service.dart';
 class ActivityServiceRegistry {
   ActivityServiceRegistry._();
 
-  static final Map<String, BaseActivityService> _services = <String, BaseActivityService>{
+  static final Map<String, BaseActivityService> _services =
+      <String, BaseActivityService>{
     'pemberian_pakan': PemberianPakanService(),
     'sanitasi': SanitasiService(),
     'pemeriksaan_kesehatan': PemeriksaanKesehatanService(),
@@ -29,15 +31,23 @@ class ActivityServiceRegistry {
     'pemotongan_bulu': PemotonganBuluService(),
     'pemotongan_kuku': PemotonganKukuService(),
     'penampungan_semen': PenampunganSemenService(),
+    'bio_security': BioSecurityService(),
   };
 
   static BaseActivityService serviceFor(String collectionName) {
     final BaseActivityService? service = _services[collectionName];
-    if (service == null) throw ArgumentError('Collection aktivitas tidak dikenal: $collectionName');
+
+    if (service == null) {
+      throw ArgumentError(
+        'Collection aktivitas tidak dikenal: $collectionName',
+      );
+    }
+
     return service;
   }
 
-  static List<BaseActivityService> get allServices => _services.values.toList(growable: false);
+  static List<BaseActivityService> get allServices =>
+      _services.values.toList(growable: false);
 
   static Future<List<ActivityRecord>> _readSafely(
     BaseActivityService service,
@@ -46,18 +56,21 @@ class ActivityServiceRegistry {
     try {
       return await read();
     } on FirebaseException catch (error) {
-      // Aktivitas lama tetap dapat ditampilkan jika rules untuk collection baru
-      // Pencegahan Ektoparasit belum sempat dipublikasikan ke Firebase.
-      if (service.collectionName == 'pencegahan_ektoparasit' &&
+      if ((service.collectionName == 'pencegahan_ektoparasit' ||
+              service.collectionName == 'bio_security') &&
           error.code == 'permission-denied') {
         return <ActivityRecord>[];
       }
+
       rethrow;
     }
   }
 
-  static Future<List<ActivityRecord>> getHistoryForBull(String bullId) async {
-    final List<List<ActivityRecord>> groups = await Future.wait(
+  static Future<List<ActivityRecord>> getHistoryForBull(
+    String bullId,
+  ) async {
+    final List<List<ActivityRecord>> groups =
+        await Future.wait(
       allServices.map(
         (service) => _readSafely(
           service,
@@ -65,13 +78,20 @@ class ActivityServiceRegistry {
         ),
       ),
     );
-    final List<ActivityRecord> records = groups.expand((items) => items).toList();
-    records.sort((a, b) => b.tanggal.compareTo(a.tanggal));
+
+    final List<ActivityRecord> records =
+        groups.expand((items) => items).toList();
+
+    records.sort(
+      (a, b) => b.tanggal.compareTo(a.tanggal),
+    );
+
     return records;
   }
 
   static Future<List<ActivityRecord>> getAll() async {
-    final List<List<ActivityRecord>> groups = await Future.wait(
+    final List<List<ActivityRecord>> groups =
+        await Future.wait(
       allServices.map(
         (service) => _readSafely(
           service,
@@ -79,13 +99,22 @@ class ActivityServiceRegistry {
         ),
       ),
     );
-    final List<ActivityRecord> records = groups.expand((items) => items).toList();
-    records.sort((a, b) => b.tanggal.compareTo(a.tanggal));
+
+    final List<ActivityRecord> records =
+        groups.expand((items) => items).toList();
+
+    records.sort(
+      (a, b) => b.tanggal.compareTo(a.tanggal),
+    );
+
     return records;
   }
 
-  static Future<List<ActivityRecord>> getRecent({int perCollection = 4}) async {
-    final List<List<ActivityRecord>> groups = await Future.wait(
+  static Future<List<ActivityRecord>> getRecent({
+    int perCollection = 4,
+  }) async {
+    final List<List<ActivityRecord>> groups =
+        await Future.wait(
       allServices.map(
         (service) => _readSafely(
           service,
@@ -93,8 +122,14 @@ class ActivityServiceRegistry {
         ),
       ),
     );
-    final List<ActivityRecord> records = groups.expand((items) => items).toList();
-    records.sort((a, b) => b.tanggal.compareTo(a.tanggal));
+
+    final List<ActivityRecord> records =
+        groups.expand((items) => items).toList();
+
+    records.sort(
+      (a, b) => b.tanggal.compareTo(a.tanggal),
+    );
+
     return records;
   }
 }

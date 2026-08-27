@@ -158,6 +158,29 @@ class ActivityCatalog {
       icon: Icons.inventory_2_outlined,
       fields: <ActivityFieldDefinition>[],
     ),
+    ActivityDefinition(
+      collectionName: 'bio_security',
+      label: 'Bio Security',
+      icon: Icons.health_and_safety_outlined,
+      fields: <ActivityFieldDefinition>[
+        ActivityFieldDefinition(
+          key: 'bahan',
+          label: 'Bahan',
+          type: ActivityFieldType.text,
+        ),
+        ActivityFieldDefinition(
+          key: 'alat',
+          label: 'Alat',
+          type: ActivityFieldType.text,
+        ),
+        ActivityFieldDefinition(
+          key: 'keterangan',
+          label: 'Keterangan',
+          type: ActivityFieldType.multiline,
+          required: false,
+        ),
+      ],
+    ),
   ];
 
   static ActivityDefinition byCollection(String collectionName) {

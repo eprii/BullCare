@@ -1,6 +1,8 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function signedIn() {
       return request.auth != null;
     }
@@ -15,12 +17,15 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if signedIn();
+
       allow create: if signedIn()
                     && request.auth.uid == uid
                     && request.resource.data.role == 'petugas';
+
       allow update: if signedIn()
                     && request.auth.uid == uid
                     && request.resource.data.role == resource.data.role;
+
       allow delete: if false;
     }
 
@@ -33,47 +38,64 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /sanitasi/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /pemeriksaan_kesehatan/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /penimbangan/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /pengukuran/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /pengobatan/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /pemberian_obat_cacing/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /pencegahan_ektoparasit/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /pemotongan_bulu/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /pemotongan_kuku/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /penampungan_semen/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+
     match /produksi_distribusi_semen_beku/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isPetugas();
+    }
+
+    // TAMBAHAN BIO SECURITY
+    match /bio_security/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
