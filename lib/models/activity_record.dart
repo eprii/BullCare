@@ -1,3 +1,4 @@
+import '../utils/app_date_utils.dart';
 import '../utils/firestore_utils.dart';
 import 'activity_definition.dart';
 
@@ -49,6 +50,8 @@ class ActivityRecord {
       if (value == null || value.toString().trim().isEmpty) continue;
       if (field.type == ActivityFieldType.boolean) {
         if (value == true) parts.add(field.label);
+      } else if (field.type == ActivityFieldType.date) {
+        parts.add('${field.label}: ${AppDateUtils.formatDate(dateTimeFromFirestore(value))}');
       } else {
         parts.add('${field.label}: $value${field.suffix == null ? '' : ' ${field.suffix}'}');
       }

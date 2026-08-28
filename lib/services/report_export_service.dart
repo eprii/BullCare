@@ -4,8 +4,8 @@ import 'package:archive/archive.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart'; // <-- IMPORT TANPA ALIAS (untuk PdfColors, PdfPageFormat)
+import 'package:pdf/widgets.dart' as pw; // <-- TETAP PAKAI pw UNTUK WIDGET
 
 import '../models/activity_definition.dart';
 import '../models/activity_record.dart';
@@ -14,6 +14,7 @@ import '../models/report_export_data.dart';
 import '../models/user_model.dart';
 import '../utils/app_date_utils.dart';
 import 'activity_service_registry.dart';
+import 'bedah_bangkai_report_template_service.dart';
 import 'bull_service.dart';
 import 'pemberian_pakan_report_template_service.dart';
 import 'penimbangan_report_template_service.dart';
@@ -24,10 +25,11 @@ import 'pemeriksaan_kesehatan_report_template_service.dart';
 import 'pemotongan_bulu_report_template_service.dart';
 import 'pemotongan_kuku_report_template_service.dart';
 import 'penampungan_semen_report_template_service.dart';
+import 'pencegahan_ektoparasit_report_template_service.dart';
 import 'sanitasi_report_template_service.dart';
+import 'pengambilan_sample_report_template_service.dart';
 
 enum ReportFileFormat { pdf, word }
-
 enum ReportPageOrientation { portrait, landscape }
 
 class ReportExportService {
@@ -85,6 +87,7 @@ class ReportExportService {
           return true;
         })
         .toList();
+
     records.sort((a, b) => b.tanggal.compareTo(a.tanggal));
 
     return ReportExportData(
@@ -111,6 +114,7 @@ class ReportExportService {
     }
 
     final String safeName = _sanitizeFileName(fileName);
+
     final bool useSanitasiTemplate =
         data.sourceLabel.trim().toLowerCase() == 'sanitasi';
     final bool usePemberianPakanTemplate = data.records.every(
@@ -140,69 +144,49 @@ class ReportExportService {
     final bool usePenampunganSemenTemplate = data.records.every(
       (record) => record.collectionName == 'penampungan_semen',
     );
+    final bool usePengambilanSampleTemplate = data.records.every(
+      (record) => record.collectionName == 'pengambilan_sample',
+    );
+    final bool usePencegahanEktoparasitTemplate = data.records.every(
+      (record) => record.collectionName == 'pencegahan_ektoparasit',
+    );
+    final bool useBedahBangkaiTemplate = data.records.every(
+      (record) => record.collectionName == 'bedah_bangkai',
+    );
+
+    Uint8List bytes;
 
     if (format == ReportFileFormat.pdf) {
-      final Uint8List bytes = useSanitasiTemplate
-          ? await const SanitasiReportTemplateService().buildPdf(
-              data: data,
-              exportedBy: exportedBy,
-            )
-          : usePemberianPakanTemplate
-              ? await const PemberianPakanReportTemplateService().buildPdf(
-                  data: data,
-                  exportedBy: exportedBy,
-                )
-              : usePenimbanganTemplate
-                  ? await const PenimbanganReportTemplateService().buildPdf(
-                      data: data,
-                      exportedBy: exportedBy,
-                    )
-                  : usePengukuranTemplate
-                      ? await const PengukuranReportTemplateService().buildPdf(
-                          data: data,
-                          exportedBy: exportedBy,
-                        )
-                      : usePemberianObatCacingTemplate
-                          ? await const PemberianObatCacingReportTemplateService()
-                              .buildPdf(
-                              data: data,
-                              exportedBy: exportedBy,
-                            )
-                          : usePengobatanTemplate
-                              ? await const PengobatanReportTemplateService()
-                                  .buildPdf(
-                                  data: data,
-                                  exportedBy: exportedBy,
-                                )
-                              : usePemeriksaanKesehatanTemplate
-                                  ? await const PemeriksaanKesehatanReportTemplateService()
-                                      .buildPdf(
-                                      data: data,
-                                      exportedBy: exportedBy,
-                                    )
-                                  : usePemotonganBuluTemplate
-                                      ? await const PemotonganBuluReportTemplateService()
-                                          .buildPdf(
-                                          data: data,
-                                          exportedBy: exportedBy,
-                                        )
-                                      : usePemotonganKukuTemplate
-                                          ? await const PemotonganKukuReportTemplateService()
-                                              .buildPdf(
-                                              data: data,
-                                              exportedBy: exportedBy,
-                                            )
-                                          : usePenampunganSemenTemplate
-                                          ? await const PenampunganSemenReportTemplateService()
-                                              .buildPdf(
-                                              data: data,
-                                              exportedBy: exportedBy,
-                                            )
-                                          : await _buildPdf(
-                                              data: data,
-                                              exportedBy: exportedBy,
-                                              orientation: orientation,
-                                            );
+      if (useSanitasiTemplate) {
+        bytes = await const SanitasiReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePemberianPakanTemplate) {
+        bytes = await const PemberianPakanReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePenimbanganTemplate) {
+        bytes = await const PenimbanganReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePengukuranTemplate) {
+        bytes = await const PengukuranReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePemberianObatCacingTemplate) {
+        bytes = await const PemberianObatCacingReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePengobatanTemplate) {
+        bytes = await const PengobatanReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePemeriksaanKesehatanTemplate) {
+        bytes = await const PemeriksaanKesehatanReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePemotonganBuluTemplate) {
+        bytes = await const PemotonganBuluReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePemotonganKukuTemplate) {
+        bytes = await const PemotonganKukuReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePenampunganSemenTemplate) {
+        bytes = await const PenampunganSemenReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePengambilanSampleTemplate) {
+        bytes = await const PengambilanSampleReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (usePencegahanEktoparasitTemplate) {
+        bytes = await const PencegahanEktoparasitReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (useBedahBangkaiTemplate) {
+        bytes = await const BedahBangkaiReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else {
+        bytes = await _buildPdf(data: data, exportedBy: exportedBy, orientation: orientation);
+      }
+
       await _saveFile(
         name: safeName,
         bytes: bytes,
@@ -213,67 +197,37 @@ class ReportExportService {
       return;
     }
 
-    final Uint8List bytes = useSanitasiTemplate
-        ? await const SanitasiReportTemplateService().buildDocx(
-            data: data,
-            exportedBy: exportedBy,
-          )
-        : usePemberianPakanTemplate
-            ? await const PemberianPakanReportTemplateService().buildDocx(
-                data: data,
-                exportedBy: exportedBy,
-              )
-            : usePenimbanganTemplate
-                ? await const PenimbanganReportTemplateService().buildDocx(
-                    data: data,
-                    exportedBy: exportedBy,
-                  )
-                : usePengukuranTemplate
-                    ? await const PengukuranReportTemplateService().buildDocx(
-                        data: data,
-                        exportedBy: exportedBy,
-                      )
-                    : usePemberianObatCacingTemplate
-                        ? await const PemberianObatCacingReportTemplateService()
-                            .buildDocx(
-                            data: data,
-                            exportedBy: exportedBy,
-                          )
-                        : usePengobatanTemplate
-                            ? await const PengobatanReportTemplateService()
-                                .buildDocx(
-                                data: data,
-                                exportedBy: exportedBy,
-                              )
-                            : usePemeriksaanKesehatanTemplate
-                                ? await const PemeriksaanKesehatanReportTemplateService()
-                                    .buildDocx(
-                                    data: data,
-                                    exportedBy: exportedBy,
-                                  )
-                                : usePemotonganBuluTemplate
-                                    ? await const PemotonganBuluReportTemplateService()
-                                        .buildDocx(
-                                        data: data,
-                                        exportedBy: exportedBy,
-                                      )
-                                    : usePemotonganKukuTemplate
-                                        ? await const PemotonganKukuReportTemplateService()
-                                            .buildDocx(
-                                            data: data,
-                                            exportedBy: exportedBy,
-                                          )
-                                        : usePenampunganSemenTemplate
-                                        ? await const PenampunganSemenReportTemplateService()
-                                            .buildDocx(
-                                            data: data,
-                                            exportedBy: exportedBy,
-                                          )
-                                        : _buildDocx(
-                                            data: data,
-                                            exportedBy: exportedBy,
-                                            orientation: orientation,
-                                          );
+    // WORD
+    if (useSanitasiTemplate) {
+      bytes = await const SanitasiReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePemberianPakanTemplate) {
+      bytes = await const PemberianPakanReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePenimbanganTemplate) {
+      bytes = await const PenimbanganReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePengukuranTemplate) {
+      bytes = await const PengukuranReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePemberianObatCacingTemplate) {
+      bytes = await const PemberianObatCacingReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePengobatanTemplate) {
+      bytes = await const PengobatanReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePemeriksaanKesehatanTemplate) {
+      bytes = await const PemeriksaanKesehatanReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePemotonganBuluTemplate) {
+      bytes = await const PemotonganBuluReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePemotonganKukuTemplate) {
+      bytes = await const PemotonganKukuReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePenampunganSemenTemplate) {
+      bytes = await const PenampunganSemenReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePengambilanSampleTemplate) {
+      bytes = await const PengambilanSampleReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (usePencegahanEktoparasitTemplate) {
+      bytes = await const PencegahanEktoparasitReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (useBedahBangkaiTemplate) {
+      bytes = await const BedahBangkaiReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else {
+      bytes = _buildDocx(data: data, exportedBy: exportedBy, orientation: orientation);
+    }
+
     await _saveFile(
       name: safeName,
       bytes: bytes,
@@ -306,7 +260,6 @@ class ReportExportService {
       }
       return;
     }
-
     await FileSaver.instance.saveFile(
       name: name,
       bytes: bytes,
@@ -337,9 +290,9 @@ class ReportExportService {
         margin: const pw.EdgeInsets.fromLTRB(30, 32, 30, 32),
         header: (context) => pw.Container(
           padding: const pw.EdgeInsets.only(bottom: 8),
-          decoration: const pw.BoxDecoration(
+          decoration: pw.BoxDecoration(
             border: pw.Border(
-              bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.7),
+              bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.7), // <-- tanpa pw.
             ),
           ),
           child: pw.Row(
@@ -355,7 +308,7 @@ class ReportExportService {
               ),
               pw.Text(
                 'Laporan Aktivitas',
-                style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
               ),
             ],
           ),
@@ -365,7 +318,7 @@ class ReportExportService {
           padding: const pw.EdgeInsets.only(top: 8),
           child: pw.Text(
             'Halaman ${context.pageNumber} dari ${context.pagesCount}',
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
           ),
         ),
         build: (context) => <pw.Widget>[
@@ -381,7 +334,7 @@ class ReportExportService {
           pw.SizedBox(height: 5),
           pw.Text(
             'Manajemen pemeliharaan bull Balai Inseminasi Buatan (BIB)',
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
           ),
           pw.SizedBox(height: 4),
           pw.Text(
@@ -435,7 +388,6 @@ class ReportExportService {
         ],
       ),
     );
-
     return document.save();
   }
 
@@ -445,7 +397,7 @@ class ReportExportService {
       children: <pw.Widget>[
         pw.Text(
           label,
-          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+          style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
         ),
         pw.SizedBox(height: 3),
         pw.Text(
@@ -528,7 +480,6 @@ class ReportExportService {
     for (final MapEntry<String, String> entry in files.entries) {
       archive.addFile(ArchiveFile.string(entry.key, entry.value));
     }
-
     return ZipEncoder().encodeBytes(archive);
   }
 
@@ -564,13 +515,13 @@ class ReportExportService {
 
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:body>
-    $body
-    <w:sectPr>
-      $pageSize
-      <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/>
-    </w:sectPr>
-  </w:body>
+ <w:body>
+ $body
+ <w:sectPr>
+ $pageSize
+ <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/>
+ </w:sectPr>
+ </w:body>
 </w:document>''';
   }
 
@@ -578,15 +529,15 @@ class ReportExportService {
     final StringBuffer buffer = StringBuffer()
       ..write('''<w:tbl>
 <w:tblPr>
-  <w:tblW w:w="0" w:type="auto"/>
-  <w:tblBorders>
-    <w:top w:val="single" w:sz="4" w:color="D6DDD7"/>
-    <w:left w:val="single" w:sz="4" w:color="D6DDD7"/>
-    <w:bottom w:val="single" w:sz="4" w:color="D6DDD7"/>
-    <w:right w:val="single" w:sz="4" w:color="D6DDD7"/>
-    <w:insideH w:val="single" w:sz="4" w:color="D6DDD7"/>
-    <w:insideV w:val="single" w:sz="4" w:color="D6DDD7"/>
-  </w:tblBorders>
+ <w:tblW w:w="0" w:type="auto"/>
+ <w:tblBorders>
+ <w:top w:val="single" w:sz="4" w:color="D6DDD7"/>
+ <w:left w:val="single" w:sz="4" w:color="D6DDD7"/>
+ <w:bottom w:val="single" w:sz="4" w:color="D6DDD7"/>
+ <w:right w:val="single" w:sz="4" w:color="D6DDD7"/>
+ <w:insideH w:val="single" w:sz="4" w:color="D6DDD7"/>
+ <w:insideV w:val="single" w:sz="4" w:color="D6DDD7"/>
+ </w:tblBorders>
 </w:tblPr>''')
       ..write(_wordTableRow(
         <String>['No.', 'Tanggal', 'Bull', 'Aktivitas', 'Petugas', 'Rincian'],
@@ -607,7 +558,6 @@ class ReportExportService {
         ]),
       );
     }
-
     buffer.write('</w:tbl>');
     return buffer.toString();
   }
@@ -616,7 +566,8 @@ class ReportExportService {
     final String cellColor = header ? 'EAF7EC' : 'FFFFFF';
     final String content = cells.map((value) {
       return '''<w:tc>
-<w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$cellColor"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar></w:tcPr>
+<w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$cellColor"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/>
+ <w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar></w:tcPr>
 ${_wordParagraph(value, bold: header, fontSizeHalfPoints: 12)}
 </w:tc>''';
     }).join();
@@ -634,11 +585,12 @@ ${_wordParagraph(value, bold: header, fontSizeHalfPoints: 12)}
     final String styleXml = style == null ? '' : '<w:pStyle w:val="$style"/>';
     final String boldXml = bold ? '<w:b/><w:bCs/>' : '';
     final String colorXml = color == null ? '' : '<w:color w:val="$color"/>';
+
     return '''<w:p>
 <w:pPr>$styleXml</w:pPr>
 <w:r>
-  <w:rPr>$boldXml$colorXml<w:sz w:val="$fontSizeHalfPoints"/><w:szCs w:val="$fontSizeHalfPoints"/></w:rPr>
-  <w:t xml:space="preserve">$safeValue</w:t>
+ <w:rPr>$boldXml$colorXml<w:sz w:val="$fontSizeHalfPoints"/><w:szCs w:val="$fontSizeHalfPoints"/></w:rPr>
+ <w:t xml:space="preserve">$safeValue</w:t>
 </w:r>
 </w:p>''';
   }
@@ -698,63 +650,63 @@ ${_wordParagraph(value, bold: header, fontSizeHalfPoints: 12)}
     final String timestamp = now.toIso8601String();
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <dc:title>Laporan Aktivitas BullCare</dc:title>
-  <dc:subject>Manajemen pemeliharaan bull BIB</dc:subject>
-  <dc:creator>${_xmlEscape(exportedBy.nama.trim().isEmpty ? exportedBy.email : exportedBy.nama)}</dc:creator>
-  <cp:lastModifiedBy>BullCare</cp:lastModifiedBy>
-  <dcterms:created xsi:type="dcterms:W3CDTF">$timestamp</dcterms:created>
-  <dcterms:modified xsi:type="dcterms:W3CDTF">$timestamp</dcterms:modified>
+ <dc:title>Laporan Aktivitas BullCare</dc:title>
+ <dc:subject>Manajemen pemeliharaan bull BIB</dc:subject>
+ <dc:creator>${_xmlEscape(exportedBy.nama.trim().isEmpty ? exportedBy.email : exportedBy.nama)}</dc:creator>
+ <cp:lastModifiedBy>BullCare</cp:lastModifiedBy>
+ <dcterms:created xsi:type="dcterms:W3CDTF">$timestamp</dcterms:created>
+ <dcterms:modified xsi:type="dcterms:W3CDTF">$timestamp</dcterms:modified>
 </cp:coreProperties>''';
   }
 
   static const String _contentTypesXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
-  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+ <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+ <Default Extension="xml" ContentType="application/xml"/>
+ <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+ <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+ <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+ <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
 </Types>''';
 
   static const String _rootRelationshipsXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+ <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+ <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+ <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
 </Relationships>''';
 
   static const String _documentRelationshipsXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+ <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>''';
 
   static const String _appPropertiesXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-  <Application>BullCare</Application>
-  <AppVersion>1.0</AppVersion>
+ <Application>BullCare</Application>
+ <AppVersion>1.0</AppVersion>
 </Properties>''';
 
   static const String _stylesXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
-    <w:name w:val="Normal"/>
-    <w:qFormat/>
-    <w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr>
-  </w:style>
-  <w:style w:type="paragraph" w:styleId="Title">
-    <w:name w:val="Title"/>
-    <w:basedOn w:val="Normal"/>
-    <w:next w:val="Normal"/>
-    <w:qFormat/>
-    <w:rPr><w:b/><w:bCs/><w:color w:val="087C32"/><w:sz w:val="36"/><w:szCs w:val="36"/></w:rPr>
-  </w:style>
-  <w:style w:type="paragraph" w:styleId="Heading1">
-    <w:name w:val="heading 1"/>
-    <w:basedOn w:val="Normal"/>
-    <w:next w:val="Normal"/>
-    <w:qFormat/>
-    <w:rPr><w:b/><w:bCs/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>
-  </w:style>
+ <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+ <w:name w:val="Normal"/>
+ <w:qFormat/>
+ <w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr>
+ </w:style>
+ <w:style w:type="paragraph" w:styleId="Title">
+ <w:name w:val="Title"/>
+ <w:basedOn w:val="Normal"/>
+ <w:next w:val="Normal"/>
+ <w:qFormat/>
+ <w:rPr><w:b/><w:bCs/><w:color w:val="087C32"/><w:sz w:val="36"/><w:szCs w:val="36"/></w:rPr>
+ </w:style>
+ <w:style w:type="paragraph" w:styleId="Heading1">
+ <w:name w:val="heading 1"/>
+ <w:basedOn w:val="Normal"/>
+ <w:next w:val="Normal"/>
+ <w:qFormat/>
+ <w:rPr><w:b/><w:bCs/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>
+ </w:style>
 </w:styles>''';
 }

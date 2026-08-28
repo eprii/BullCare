@@ -61,6 +61,10 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
+    match /bedah_bangkai/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isPetugas();
+    }
     match /pemotongan_bulu/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
@@ -70,6 +74,10 @@ service cloud.firestore {
       allow create, update, delete: if isPetugas();
     }
     match /penampungan_semen/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isPetugas();
+    }
+    match /pengambilan_sample/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }

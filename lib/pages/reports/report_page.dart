@@ -30,8 +30,7 @@ class _ReportPageState extends State<ReportPage> {
   ReportPageOrientation _orientation = ReportPageOrientation.portrait;
   bool _exporting = false;
 
-  static const List<_ReportSourceOption> _sourceOptions =
-      <_ReportSourceOption>[
+  static const List<_ReportSourceOption> _sourceOptions = <_ReportSourceOption>[
     _ReportSourceOption(
       id: 'pemberian_pakan',
       collectionName: 'pemberian_pakan',
@@ -75,6 +74,18 @@ class _ReportPageState extends State<ReportPage> {
       icon: Icons.vaccines_outlined,
     ),
     _ReportSourceOption(
+      id: 'pencegahan_ektoparasit',
+      collectionName: 'pencegahan_ektoparasit',
+      label: 'Pencegahan Ektoparasit',
+      icon: Icons.bug_report_outlined,
+    ),
+    _ReportSourceOption(
+      id: 'bedah_bangkai',
+      collectionName: 'bedah_bangkai',
+      label: 'Bedah Bangkai',
+      icon: Icons.biotech_outlined,
+    ),
+    _ReportSourceOption(
       id: 'pemotongan_bulu',
       collectionName: 'pemotongan_bulu',
       label: 'Pemotongan Bulu',
@@ -91,6 +102,13 @@ class _ReportPageState extends State<ReportPage> {
       collectionName: 'penampungan_semen',
       label: 'Penampungan Semen',
       icon: Icons.water_drop_outlined,
+    ),
+    // ===== AKTIVITAS BARU: PENGAMBILAN SAMPLE =====
+    _ReportSourceOption(
+      id: 'pengambilan_sample',
+      collectionName: 'pengambilan_sample',
+      label: 'Pengambilan Sample',
+      icon: Icons.science_outlined,
     ),
   ];
 
@@ -141,6 +159,7 @@ class _ReportPageState extends State<ReportPage> {
       anchorBox.size.width,
       anchorBox.size.height,
     );
+
     final double menuWidth =
         anchorBox.size.width.clamp(240.0, 520.0).toDouble();
 
@@ -221,7 +240,7 @@ class _ReportPageState extends State<ReportPage> {
               ),
             ),
           );
-        }).toList();
+        }).toList(); // <-- PERBAIKAN: tambahkan .toList() agar mengembalikan List<PopupMenuItem<String>>
       },
     );
     if (result == null || !mounted) return;
@@ -344,18 +363,22 @@ class _ReportPageState extends State<ReportPage> {
 
   Future<void> _export() async {
     if (_exporting) return;
+
     final _ReportSourceOption? source = _selectedSource;
     if (source == null) {
       AppFeedback.showError(context, 'Pilih sumber data aktivitas terlebih dahulu.');
       return;
     }
+
     if (_fileNameController.text.trim().isEmpty) {
       AppFeedback.showError(context, 'Nama file tidak boleh kosong.');
       return;
     }
+
     final bool spansMultipleMonths =
         _period.start.year != _period.end.year ||
-            _period.start.month != _period.end.month;
+        _period.start.month != _period.end.month;
+
     if (source.collectionName == 'sanitasi' && spansMultipleMonths) {
       AppFeedback.showError(
         context,
@@ -363,6 +386,7 @@ class _ReportPageState extends State<ReportPage> {
       );
       return;
     }
+
     if (source.collectionName == 'pemberian_pakan' && spansMultipleMonths) {
       AppFeedback.showError(
         context,
@@ -370,6 +394,7 @@ class _ReportPageState extends State<ReportPage> {
       );
       return;
     }
+
     if (source.collectionName == 'penimbangan' &&
         _period.start.year != _period.end.year) {
       AppFeedback.showError(
@@ -378,7 +403,9 @@ class _ReportPageState extends State<ReportPage> {
       );
       return;
     }
+
     setState(() => _exporting = true);
+
     try {
       final ReportExportData data = await _service.loadData(
         collections: <String>{source.collectionName},
@@ -386,7 +413,9 @@ class _ReportPageState extends State<ReportPage> {
         periodEnd: _period.end,
         sourceLabel: source.label,
       );
+
       if (!mounted) return;
+
       if (data.records.isEmpty) {
         AppFeedback.showError(
           context,
@@ -402,7 +431,9 @@ class _ReportPageState extends State<ReportPage> {
         format: _format,
         orientation: _orientation,
       );
+
       if (!mounted) return;
+
       AppFeedback.showSuccess(
         context,
         'Berhasil mengekspor ${data.records.length} data ${source.label} ke ${_format == ReportFileFormat.pdf ? 'PDF' : 'Word'}.',
@@ -420,6 +451,7 @@ class _ReportPageState extends State<ReportPage> {
     final Color accent = _format == ReportFileFormat.pdf
         ? AppTheme.primary
         : const Color(0xFF2D6BD3);
+
     final _ReportSourceOption? selectedSource = _selectedSource;
 
     return Scaffold(
@@ -471,18 +503,24 @@ class _ReportPageState extends State<ReportPage> {
                           Expanded(
                             child: Text(
                               selectedSource.collectionName == 'sanitasi'
-                                  ? 'Laporan Sanitasi menggunakan template FORMULIR SANITASI KANDANG DAN PEJANTAN (SOP-6.3.l). Formulir utama tetap mengikuti format SOP, lalu dilengkapi halaman rincian data sanitasi agar isi setiap aktivitas terlihat lengkap.'
+                                  ? 'Laporan Sanitasi menggunakan template FORMULIR SANITASI KANDANG DAN PEJANTAN (SOP-6.3.l). Formulir utama lalu dilengkapi halaman rincian data sanitasi agar isi setiap aktivitas terlihat lengkap.'
                                   : selectedSource.collectionName == 'pemberian_pakan'
-                                      ? 'Laporan Pemberian Pakan menggunakan template SOP-6.3a: FORMULIR PEMBERIAN PAKAN HIJAUAN, KONSENTRAT, dan KECAMBAH. Formulir dibuat per bulan dan dilengkapi halaman rincian agar data aktivitas tetap terlihat lengkap.'
+                                      ? 'Laporan Pemberian Pakan menggunakan template SOP-6.3a: FORMULIR PEMBERIAN PAKAN HIJAUAN, KONSENTRAT DAN KECAMBAH. Data disusun per bulan dan dilengkapi halaman rincian agar data aktivitas tetap terlihat lengkap.'
                                       : selectedSource.collectionName == 'penimbangan'
-                                          ? 'Laporan Penimbangan menggunakan template FORMULIR PENIMBANGAN PEJANTAN (SOP-6.3b). Berat badan ditempatkan per bull dan per bulan dalam satu tahun, lalu dilengkapi halaman rincian agar tanggal, keterangan, dan nama petugas tetap terbaca.'
+                                          ? 'Laporan Penimbangan menggunakan template FORMULIR PENIMBANGAN PEJANTAN (SOP-6.3b). Berat badan disusun dalam satu tahun, lalu dilengkapi halaman rincian agar tanggal, keterangan, dan nama petugas tetap terbaca.'
                                           : selectedSource.collectionName == 'penampungan_semen'
-                                              ? 'Laporan Penampungan Semen menggunakan template FORMULIR PENAMPUNGAN SEMEN (SOP-7.5.1f) dengan kolom AV, Vaselin, Suhu, Volume Semen, dan Paraf. Jika periode mencakup beberapa tanggal, setiap Hari/Tanggal dibuat pada lembar formulir tersendiri.'
-                                              : 'Laporan akan mengambil data ${selectedSource.label} sesuai periode yang dipilih.',
+                                              ? 'Laporan Penampungan Semen menggunakan template FORMULIR PENAMPUNGAN SEMEN (SOP-7.5.1f). Data terbaru ditampilkan sebagai Kolektor, Volume, P/TP, Jumlah Straw, dan Paraf. Record historis dengan format AV, Vaselin, Suhu, dan Volume Semen tetap didukung. Jika periode mencakup beberapa tanggal, setiap Hari/Tanggal dibuat pada lembar formulir tersendiri.'
+                                              : selectedSource.collectionName == 'pengambilan_sample'
+                                                  ? 'Laporan Pengambilan Sample menggunakan format formulir dengan 5 jenis sampel (Darah, Serum, Ulas Darah, Swab, Feses) dan logo Disbunnak. Periode per bulan, dilengkapi halaman rincian data.'
+                                                  : selectedSource.collectionName == 'pencegahan_ektoparasit'
+                                                      ? 'Laporan Pencegahan Ektoparasit menggunakan format FORMULIR PENCEGAHAN EKTOPARASIT (SOP-6.3 k) dengan kolom Nama Bull, Bangsa, Bahan, Alat, Tindakan, dan Keterangan. Data dikelompokkan per tanggal pelaksanaan.'
+                                                      : selectedSource.collectionName == 'bedah_bangkai'
+                                                          ? 'Laporan Bedah Bangkai mengikuti format formulir kantor: Jenis Bull, Bangsa, Tanggal Mati, Peralatan, Sampel/Organ, Tanggal Pengiriman Laboratorium, Tanggal Jawaban, Hasil Pemeriksaan, dan Keterangan. Setiap baris Organ | Hasil akan dipisahkan menjadi baris tabel.'
+                                                          : 'Laporan akan mengambil data ${selectedSource.label} sesuai periode yang dipilih.',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppTheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -542,10 +580,9 @@ class _ReportPageState extends State<ReportPage> {
                             ? 'Potret'
                             : 'Lanskap',
                         placeholder: 'Pilih orientasi laporan',
-                        leadingIcon:
-                            _orientation == ReportPageOrientation.portrait
-                                ? Icons.stay_current_portrait_rounded
-                                : Icons.stay_current_landscape_rounded,
+                        leadingIcon: _orientation == ReportPageOrientation.portrait
+                            ? Icons.stay_current_portrait_rounded
+                            : Icons.stay_current_landscape_rounded,
                         onTap: () => _chooseOrientation(dropdownContext),
                       );
                     },
@@ -818,6 +855,7 @@ class _CustomSelectorField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasValue = value != null && value!.trim().isNotEmpty;
+
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
@@ -907,6 +945,7 @@ class _SafetyInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool pdf = format == ReportFileFormat.pdf;
     final Color color = pdf ? AppTheme.primary : const Color(0xFF2D6BD3);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(

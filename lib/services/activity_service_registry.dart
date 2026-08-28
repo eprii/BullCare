@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/activity_record.dart';
 import 'base_activity_service.dart';
+import 'bedah_bangkai_service.dart';
 import 'pemberian_obat_cacing_service.dart';
 import 'pemberian_pakan_service.dart';
 import 'pencegahan_ektoparasit_service.dart';
@@ -9,6 +10,7 @@ import 'pemeriksaan_kesehatan_service.dart';
 import 'pemotongan_bulu_service.dart';
 import 'pemotongan_kuku_service.dart';
 import 'penampungan_semen_service.dart';
+import 'pengambilan_sample_service.dart';
 import 'pengobatan_service.dart';
 import 'pengukuran_service.dart';
 import 'penimbangan_service.dart';
@@ -26,9 +28,11 @@ class ActivityServiceRegistry {
     'pengobatan': PengobatanService(),
     'pemberian_obat_cacing': PemberianObatCacingService(),
     'pencegahan_ektoparasit': PencegahanEktoparasitService(),
+    'bedah_bangkai': BedahBangkaiService(),
     'pemotongan_bulu': PemotonganBuluService(),
     'pemotongan_kuku': PemotonganKukuService(),
     'penampungan_semen': PenampunganSemenService(),
+    'pengambilan_sample': PengambilanSampleService(),
   };
 
   static BaseActivityService serviceFor(String collectionName) {
@@ -47,8 +51,10 @@ class ActivityServiceRegistry {
       return await read();
     } on FirebaseException catch (error) {
       // Aktivitas lama tetap dapat ditampilkan jika rules untuk collection baru
-      // Pencegahan Ektoparasit belum sempat dipublikasikan ke Firebase.
-      if (service.collectionName == 'pencegahan_ektoparasit' &&
+      // belum sempat dipublikasikan ke Firebase.
+      if ((service.collectionName == 'pencegahan_ektoparasit' ||
+              service.collectionName == 'pengambilan_sample' ||
+              service.collectionName == 'bedah_bangkai') &&
           error.code == 'permission-denied') {
         return <ActivityRecord>[];
       }

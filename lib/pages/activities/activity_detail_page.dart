@@ -7,6 +7,7 @@ import '../../models/user_model.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_date_utils.dart';
+import '../../utils/firestore_utils.dart';
 import '../../widgets/app_page_container.dart';
 import '../../widgets/bull_avatar.dart';
 
@@ -144,6 +145,10 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
   String _displayValue(ActivityFieldDefinition field, dynamic value) {
     if (field.type == ActivityFieldType.boolean) {
       return value == true ? 'Ya' : 'Tidak';
+    }
+    if (field.type == ActivityFieldType.date) {
+      if (value == null) return '-';
+      return AppDateUtils.formatDate(dateTimeFromFirestore(value));
     }
 
     if (value == null || value.toString().trim().isEmpty) return '-';
