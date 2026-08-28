@@ -14,8 +14,13 @@ class AppConstants {
     'pengukuran',
     'pengobatan',
     'pemberian_obat_cacing',
+    'pencegahan_ektoparasit',
+    'bedah_bangkai',
     'pemotongan_bulu',
     'pemotongan_kuku',
     'penampungan_semen',
+    'produksi_distribusi_semen_beku',
+    'bio_security',
+    'pengambilan_sample',
   ];
 }

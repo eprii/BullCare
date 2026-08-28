@@ -190,6 +190,10 @@ class PenampunganSemenReportTemplateService {
       '${pageIndex + 1} dari $pageCount',
     );
 
+    if (page.layout == _SemenLayout.current) {
+      result = _patchCurrentWordHeader(result);
+    }
+
     final List<RegExpMatch> tableMatches = RegExp(
       r'<w:tbl>.*?</w:tbl>',
       dotAll: true,
@@ -242,10 +246,10 @@ class PenampunganSemenReportTemplateService {
               '${firstRowNumber + rowIndex}',
               record.breed,
               record.bull,
-              record.av,
-              record.vaselin,
-              record.temperature,
-              record.volume,
+              record.field4,
+              record.field5,
+              record.field6,
+              record.field7,
               record.officer,
             ];
       patchedRows[rowIndex + 2] = _replaceRowCellTexts(
@@ -263,6 +267,23 @@ class PenampunganSemenReportTemplateService {
       );
     }
     return patchedTable;
+  }
+
+  String _patchCurrentWordHeader(String xml) {
+    String result = xml;
+    result = _replaceFirstText(
+      result,
+      'PERSIAPAN VAGINA BUATAN',
+      'DATA PENAMPUNGAN SEMEN',
+    );
+    // Header VOLUME SEMEN pada template Word tersimpan sebagai dua text run.
+    // Untuk schema baru, sel yang sama digunakan untuk JUMLAH STRAW.
+    result = _replaceFirstText(result, 'VOLUME', 'JUMLAH');
+    result = _replaceFirstText(result, 'SEMEN', 'STRAW');
+    result = _replaceFirstText(result, 'AV', 'KOLEKTOR');
+    result = _replaceFirstText(result, 'VASELIN', 'VOLUME');
+    result = _replaceFirstText(result, 'SUHU', 'P/TP');
+    return result;
   }
 
   String _replaceFirstText(String xml, String oldText, String newText) {
@@ -354,16 +375,20 @@ class PenampunganSemenReportTemplateService {
       ),
     ];
 
+    if (page.layout == _SemenLayout.current) {
+      children.addAll(_currentPdfHeader());
+    }
+
     for (int rowIndex = 0; rowIndex < page.records.length; rowIndex++) {
       final _SemenRow row = page.records[rowIndex];
       final List<String> values = <String>[
         '${page.firstRowNumber + rowIndex}',
         row.breed,
         row.bull,
-        row.av,
-        row.vaselin,
-        row.temperature,
-        row.volume,
+        row.field4,
+        row.field5,
+        row.field6,
+        row.field7,
         row.officer,
       ];
       for (int colIndex = 0; colIndex < values.length; colIndex++) {
@@ -416,6 +441,84 @@ class PenampunganSemenReportTemplateService {
     }
 
     return pw.Stack(children: children);
+  }
+
+  List<pw.Widget> _currentPdfHeader() {
+    const double headerTop = 310;
+    const double headerMiddle = 357;
+    const double headerBottom = 399;
+
+    final List<pw.Widget> widgets = <pw.Widget>[];
+
+    void replaceHeaderCell({
+      required double left,
+      required double right,
+      required double top,
+      required double bottom,
+      required String text,
+      double fontSize = 7.2,
+    }) {
+      // Sisakan garis border template asli agar bentuk SOP tetap dipertahankan.
+      widgets.add(
+        _pdfWhiteBox(
+          leftPx: left + 1.5,
+          topPx: top + 1.5,
+          widthPx: (right - left) - 3,
+          heightPx: (bottom - top) - 3,
+        ),
+      );
+      widgets.add(
+        _pdfTextBox(
+          text: text,
+          leftPx: left + 4,
+          topPx: top + 3,
+          widthPx: (right - left) - 8,
+          heightPx: (bottom - top) - 6,
+          fontSize: fontSize,
+          alignment: pw.Alignment.center,
+        ),
+      );
+    }
+
+    replaceHeaderCell(
+      left: _columnBoundsPx[3],
+      right: _columnBoundsPx[6],
+      top: headerTop,
+      bottom: headerMiddle,
+      text: 'DATA PENAMPUNGAN SEMEN',
+      fontSize: 7.0,
+    );
+    replaceHeaderCell(
+      left: _columnBoundsPx[3],
+      right: _columnBoundsPx[4],
+      top: headerMiddle,
+      bottom: headerBottom,
+      text: 'KOLEKTOR',
+    );
+    replaceHeaderCell(
+      left: _columnBoundsPx[4],
+      right: _columnBoundsPx[5],
+      top: headerMiddle,
+      bottom: headerBottom,
+      text: 'VOLUME',
+    );
+    replaceHeaderCell(
+      left: _columnBoundsPx[5],
+      right: _columnBoundsPx[6],
+      top: headerMiddle,
+      bottom: headerBottom,
+      text: 'P/TP',
+    );
+    replaceHeaderCell(
+      left: _columnBoundsPx[6],
+      right: _columnBoundsPx[7],
+      top: headerTop,
+      bottom: headerBottom,
+      text: 'JUMLAH STRAW',
+      fontSize: 6.6,
+    );
+
+    return widgets;
   }
 
   pw.Widget _pdfCell({
@@ -499,14 +602,25 @@ class PenampunganSemenReportTemplateService {
       final BullModel? bull = data.bulls[record.bull_id];
       final String breed = bull?.bangsa.trim() ?? '';
       final String bullName = bull?.nama.trim() ?? '';
+      final bool isCurrent = _usesCurrentSchema(record);
+
       return _SemenRow(
         record: record,
         breed: breed,
         bull: bullName.isNotEmpty ? bullName : record.bull_id,
-        av: _plainValue(record.data['av']),
-        vaselin: _plainValue(record.data['vaselin']),
-        temperature: _numberValue(record.data['suhu_av']),
-        volume: _numberValue(record.data['volume_semen']),
+        layout: isCurrent ? _SemenLayout.current : _SemenLayout.legacy,
+        field4: isCurrent
+            ? _plainValue(record.data['kolektor'])
+            : _plainValue(record.data['av']),
+        field5: isCurrent
+            ? _plainValue(record.data['volume'])
+            : _plainValue(record.data['vaselin']),
+        field6: isCurrent
+            ? _plainValue(record.data['p_tp'])
+            : _numberValue(record.data['suhu_av']),
+        field7: isCurrent
+            ? _plainValue(record.data['jumlah_straw_yang_dihasilkan'])
+            : _numberValue(record.data['volume_semen']),
         officer: _plainValue(record.data['nama_petugas']),
       );
     }).toList();
@@ -524,6 +638,8 @@ class PenampunganSemenReportTemplateService {
       );
       final int dateCompare = aDate.compareTo(bDate);
       if (dateCompare != 0) return dateCompare;
+      final int layoutCompare = a.layout.index.compareTo(b.layout.index);
+      if (layoutCompare != 0) return layoutCompare;
       final int bullCompare = a.bull.toLowerCase().compareTo(
             b.bull.toLowerCase(),
           );
@@ -531,6 +647,13 @@ class PenampunganSemenReportTemplateService {
       return a.record.created_at.compareTo(b.record.created_at);
     });
     return rows;
+  }
+
+  bool _usesCurrentSchema(ActivityRecord record) {
+    return record.data.containsKey('kolektor') ||
+        record.data.containsKey('volume') ||
+        record.data.containsKey('p_tp') ||
+        record.data.containsKey('jumlah_straw_yang_dihasilkan');
   }
 
   List<_SemenPage> _pages(ReportExportData data) {
@@ -543,38 +666,52 @@ class PenampunganSemenReportTemplateService {
             data.periodStart.month,
             data.periodStart.day,
           ),
+          layout: _SemenLayout.current,
           records: const <_SemenRow>[],
           firstRowNumber: 1,
         ),
       ];
     }
 
-    final Map<DateTime, List<_SemenRow>> rowsByDate =
-        <DateTime, List<_SemenRow>>{};
+    final Map<DateTime, Map<_SemenLayout, List<_SemenRow>>> rowsByDate =
+        <DateTime, Map<_SemenLayout, List<_SemenRow>>>{};
     for (final _SemenRow row in rows) {
       final DateTime date = DateTime(
         row.record.tanggal.year,
         row.record.tanggal.month,
         row.record.tanggal.day,
       );
-      rowsByDate.putIfAbsent(date, () => <_SemenRow>[]).add(row);
+      rowsByDate
+          .putIfAbsent(
+            date,
+            () => <_SemenLayout, List<_SemenRow>>{},
+          )
+          .putIfAbsent(row.layout, () => <_SemenRow>[])
+          .add(row);
     }
 
     final List<DateTime> dates = rowsByDate.keys.toList()..sort();
     final List<_SemenPage> pages = <_SemenPage>[];
     for (final DateTime date in dates) {
-      final List<_SemenRow> dateRows = rowsByDate[date]!;
-      for (int start = 0; start < dateRows.length; start += _rowsPerPage) {
-        final int end = (start + _rowsPerPage) > dateRows.length
-            ? dateRows.length
-            : start + _rowsPerPage;
-        pages.add(
-          _SemenPage(
-            date: date,
-            records: dateRows.sublist(start, end),
-            firstRowNumber: start + 1,
-          ),
-        );
+      final Map<_SemenLayout, List<_SemenRow>> layoutGroups =
+          rowsByDate[date]!;
+      for (final _SemenLayout layout in _SemenLayout.values) {
+        final List<_SemenRow>? dateRows = layoutGroups[layout];
+        if (dateRows == null || dateRows.isEmpty) continue;
+
+        for (int start = 0; start < dateRows.length; start += _rowsPerPage) {
+          final int end = (start + _rowsPerPage) > dateRows.length
+              ? dateRows.length
+              : start + _rowsPerPage;
+          pages.add(
+            _SemenPage(
+              date: date,
+              layout: layout,
+              records: dateRows.sublist(start, end),
+              firstRowNumber: start + 1,
+            ),
+          );
+        }
       }
     }
     return pages;
@@ -607,14 +744,18 @@ class PenampunganSemenReportTemplateService {
   }
 }
 
+enum _SemenLayout { current, legacy }
+
 class _SemenPage {
   const _SemenPage({
     required this.date,
+    required this.layout,
     required this.records,
     required this.firstRowNumber,
   });
 
   final DateTime date;
+  final _SemenLayout layout;
   final List<_SemenRow> records;
   final int firstRowNumber;
 }
@@ -624,19 +765,21 @@ class _SemenRow {
     required this.record,
     required this.breed,
     required this.bull,
-    required this.av,
-    required this.vaselin,
-    required this.temperature,
-    required this.volume,
+    required this.layout,
+    required this.field4,
+    required this.field5,
+    required this.field6,
+    required this.field7,
     required this.officer,
   });
 
   final ActivityRecord record;
   final String breed;
   final String bull;
-  final String av;
-  final String vaselin;
-  final String temperature;
-  final String volume;
+  final _SemenLayout layout;
+  final String field4;
+  final String field5;
+  final String field6;
+  final String field7;
   final String officer;
 }

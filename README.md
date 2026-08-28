@@ -1,30 +1,40 @@
 # BullCare BIB
 
-BullCare adalah aplikasi mobile dan web berbasis Flutter untuk mendigitalisasi manajemen pemeliharaan bull di Balai Inseminasi Buatan. Data disimpan pada Firebase Authentication dan Cloud Firestore. Aplikasi tidak menggunakan Firebase Storage.
+**BullCare — Manajemen Pemeliharaan Bull** adalah aplikasi Flutter untuk Android dan Web yang membantu digitalisasi manajemen pemeliharaan bull di Balai Inseminasi Buatan (BIB). Data menggunakan Firebase Authentication dan Cloud Firestore. Project **tidak menggunakan Firebase Storage**; foto bull disimpan sebagai Base64 pada data bull.
 
-## Alur aplikasi
+Versi source pada project ini: **1.6.0+7**.
 
-1. Splash screen.
-2. Login atau pembuatan akun Petugas.
-3. Validasi Firebase Authentication dan profil pada collection `users`.
-4. Dashboard menampilkan total bull, reminder hari ini, dan aktivitas terbaru.
-5. Daftar Bull menyediakan pencarian, profil, tambah, edit, dan hapus sesuai role.
-6. Profil Bull menampilkan identitas, ringkasan kondisi terbaru, dan timeline aktivitas.
-7. Petugas dapat memilih jenis aktivitas, mengisi formulir, memvalidasi, lalu menyimpan data ke root collection Cloud Firestore.
-8. Setelah tersimpan, profil, timeline, dashboard, dan reminder membaca data terbaru.
-9. Supervisor hanya memiliki akses baca.
+## Konsep utama
+
+BullCare berfokus pada:
+
+**Profil Bull + Aktivitas + Riwayat + Reminder + Laporan**
+
+Data aktivitas disimpan sebagai histori. Nilai terbaru dapat ditampilkan sebagai ringkasan pada profil bull, tetapi record lama tetap dipertahankan.
 
 ## Role
 
-- **Petugas** dapat melihat seluruh data, menambah/edit/hapus bull, menambah aktivitas, dan mengedit aktivitas.
-- **Supervisor** dapat melihat dashboard, daftar bull, reminder, serta riwayat aktivitas tanpa tombol perubahan data.
-- Registrasi dari aplikasi membuat akun dengan role `petugas`. Role `supervisor` ditetapkan secara manual oleh administrator pada dokumen `users/{uid}`.
+### Petugas
+
+Petugas dapat membaca data dan melakukan perubahan sesuai fitur aplikasi, termasuk CRUD Bull dan aktivitas serta export laporan.
+
+### Supervisor
+
+Supervisor bersifat **read-only** untuk data operasional. Supervisor dapat melihat dashboard, Bull, profil, aktivitas, histori, reminder, dan laporan, tetapi tidak mendapatkan akses perubahan data.
+
+Role yang digunakan tetap:
+
+- `petugas`
+- `supervisor`
+
+Registrasi aplikasi membuat profil dengan role `petugas`. Role `supervisor` ditetapkan secara administratif pada data user.
 
 ## Struktur utama
 
 ```text
 lib/
 ├── app.dart
+├── firebase_options.dart
 ├── main.dart
 ├── constants/
 ├── models/
@@ -35,6 +45,7 @@ lib/
 │   ├── dashboard/
 │   ├── home/
 │   ├── reminders/
+│   ├── reports/
 │   └── splash/
 ├── services/
 ├── theme/
@@ -42,69 +53,152 @@ lib/
 └── widgets/
 ```
 
-Setiap collection aktivitas memiliki file service sendiri dan memakai `BaseActivityService` untuk mencegah duplikasi kode.
+Arsitektur aktivitas memakai:
 
-
-## Pembaruan V4
-
-- Filter riwayat aktivitas per kategori pada Profil Bull.
-- Validasi dan konfirmasi sebelum tambah atau edit data.
-- Notifikasi berhasil setelah tambah, edit, dan hapus data.
-- Validasi kode bull unik, angka positif, dan tanggal aktivitas.
-- Aktivitas Pengambilan Sampel telah dihapus.
+- `ActivityDefinition`
+- `ActivityRecord`
+- `ActivityServiceRegistry`
+- `BaseActivityService`
+- service masing-masing root collection aktivitas
 
 ## Collection Firestore
 
-`users`, `bulls`, `pemberian_pakan`, `sanitasi`, `pemeriksaan_kesehatan`, `penimbangan`, `pengukuran`, `pengobatan`, `pemberian_obat_cacing`, `pemotongan_bulu`, `pemotongan_kuku`, dan `penampungan_semen`.
+Semua collection berada pada root Cloud Firestore.
 
-Semua collection berada pada root Firestore. Data aktivitas terhubung dengan `bull_id` dan `petugas_uid`. Data dinamis tidak diduplikasi ke dokumen master bull.
+Collection utama saat ini:
 
-## Menjalankan proyek
+- `users`
+- `bulls`
+- `pemberian_pakan`
+- `sanitasi`
+- `pemeriksaan_kesehatan`
+- `penimbangan`
+- `pengukuran`
+- `pengobatan`
+- `pemberian_obat_cacing`
+- `pencegahan_ektoparasit`
+- `pemotongan_bulu`
+- `pemotongan_kuku`
+- `penampungan_semen`
+- `pengambilan_sample`
 
-1. Pasang Flutter stable yang kompatibel dengan Dart 3.10 atau lebih baru.
-2. Jalankan `flutter pub get`.
-3. Aktifkan **Email/Password** pada Firebase Authentication.
-4. Buat database Cloud Firestore.
-5. Terapkan `firestore.rules` dengan `firebase deploy --only firestore:rules`.
-6. Jalankan `flutter run`.
-7. Buat APK dengan `flutter build apk --release`.
+Detail field aktual tersedia pada `docs/FIRESTORE_SCHEMA.md`.
 
-Konfigurasi Firebase Android, iOS, dan web yang sudah ada tetap dipertahankan.
+## Aktivitas saat ini
+
+`ActivityCatalog`, `ActivityServiceRegistry`, constants, sumber Laporan, dan Firestore Rules telah disinkronkan untuk 12 jenis aktivitas:
+
+1. Pemberian Pakan
+2. Sanitasi
+3. Pemeriksaan Kesehatan
+4. Penimbangan
+5. Pengukuran
+6. Pengobatan
+7. Pemberian Obat Cacing
+8. Pencegahan Ektoparasit
+9. Pemotongan Bulu
+10. Pemotongan Kuku
+11. Penampungan Semen
+12. Pengambilan Sample
+
+> Catatan riwayat: pada pembaruan lama Pengambilan Sampel pernah dihapus. Pada source terkini fitur tersebut telah ditambahkan kembali dan terintegrasi ke registry, Firestore Rules, histori, serta laporan.
+
+## Penampungan Semen
+
+Form/input aktif menggunakan field terbaru:
+
+- `kolektor`
+- `volume`
+- `p_tp`
+- `jumlah_straw_yang_dihasilkan`
+- `keterangan`
+
+Laporan tetap menyediakan kompatibilitas terhadap record historis yang masih memakai schema lama seperti AV, Vaselin, Suhu AV, dan Volume Semen.
 
 ## Reminder
 
-Reminder dibuat berdasarkan data yang didukung rancangan proyek:
+Reminder yang digunakan source saat ini:
 
-- Pemberian pakan harian yang belum dicatat.
-- Sanitasi kandang setiap bulan pada tanggal yang sama dengan pencatatan sanitasi kandang terakhir.
-- Penampungan semen setiap Senin dan Kamis yang belum dicatat.
+- Pemberian pakan: harian bila belum dicatat pada hari berjalan.
+- Sanitasi kandang: siklus harian berdasarkan aktivitas terakhir.
+- Sanitasi tempat makan: siklus harian berdasarkan aktivitas terakhir.
+- Sanitasi pejantan: siklus kalender bulanan berdasarkan aktivitas terakhir.
+- Penampungan semen: Senin dan Kamis bila belum dicatat pada hari tersebut.
 
+Jam sanitasi menggunakan pengaturan per bull melalui:
 
-## Pembaruan V5
+- `sanitasi_reminder_hour`
+- `sanitasi_reminder_minute`
 
-- Informasi internal UID petugas dan nama collection disembunyikan dari detail aktivitas.
-- Reminder sanitasi kandang menggunakan siklus kalender bulanan pada tanggal yang sama.
-- Reminder menampilkan jadwal kalender dan countdown real-time yang otomatis berulang setiap bulan.
+Default model adalah pukul 08:00.
 
-## Countdown Sanitasi Kandang
+## Laporan dan export
 
-Setelah aktivitas **Sanitasi Kandang** disimpan, menu Reminder menampilkan countdown menuju tanggal yang sama pada bulan berikutnya. Countdown berubah setiap detik dan otomatis beralih ke bulan selanjutnya ketika satu periode selesai. Apabila tanggal awal tidak tersedia pada bulan tujuan, sistem menggunakan hari terakhir bulan tersebut, kemudian kembali ke tanggal awal pada bulan yang mendukungnya.
+Halaman Laporan dapat memilih sumber aktivitas, periode, nama file, format, dan orientasi sesuai implementasi yang tersedia.
 
+Export mendukung:
 
-## Pembaruan V7
+- PDF
+- Word/DOCX
 
-- Jadwal sanitasi kandang menggunakan tanggal kalender bulanan, bukan interval 20 hari.
-- Countdown sanitasi kandang otomatis mengulang ke bulan berikutnya setelah mencapai nol.
-- Tombol pencatatan aktivitas pada halaman Reminder dihapus.
-- Form aktivitas menyediakan isian wajib nama petugas pelaksana.
-- Detail aktivitas menampilkan nama petugas pelaksana yang disimpan pada aktivitas.
-- Logout memiliki dialog konfirmasi, status proses, notifikasi berhasil, dan penanganan kegagalan.
+Template SOP resmi yang tersedia tetap digunakan untuk aktivitas yang mempunyai template pada `assets/templates/`.
 
-## Pembaruan V8 — Modern Green UI
+Pengembangan lanjutan juga mencakup:
 
-- Seluruh tampilan diperbarui mengikuti gaya modern minimalis berwarna hijau, putih, dan abu-abu lembut.
-- Dashboard menggunakan greeting, hero banner, kartu ringkasan, dan daftar aktivitas terbaru yang lebih ringkas.
-- Daftar bull, profil bull, form, riwayat aktivitas, detail aktivitas, dan reminder menggunakan kartu rounded dengan hierarki informasi yang lebih jelas.
-- Bottom navigation diperbarui tanpa mengubah empat menu utama yang sudah ada.
-- Login, registrasi, splash screen, empty state, error state, loading state, dan countdown sanitasi memakai bahasa visual yang sama.
-- Seluruh fitur, role, validasi, CRUD, Firestore, reminder bulanan, countdown, dan nama petugas tetap menggunakan sistem V7.
+- laporan Pengambilan Sample,
+- laporan Pencegahan Ektoparasit berdasarkan referensi formulir SOP-6.3 k,
+- kompatibilitas laporan Penampungan Semen schema baru dan histori lama.
+
+### Android
+
+Android menggunakan MethodChannel:
+
+`id.kalselprov.bib.bullcare/downloads`
+
+Method:
+
+`saveWithPicker`
+
+Implementasi native menggunakan `Intent.ACTION_CREATE_DOCUMENT` sehingga user memilih lokasi penyimpanan melalui system document picker.
+
+## Foto Bull
+
+BullCare tidak menggunakan Firebase Storage.
+
+Field foto pada Bull:
+
+- `foto_base64`
+- `foto_background_base64`
+
+Foto dipilih melalui mekanisme aplikasi kemudian disimpan sebagai Base64 pada dokumen Bull.
+
+## Menjalankan project
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+```
+
+Untuk build Android:
+
+```bash
+flutter build apk --release
+```
+
+Untuk Web:
+
+```bash
+flutter build web
+```
+
+Sebelum menjalankan aplikasi, pastikan Firebase Authentication dan Cloud Firestore pada project Firebase terkait sudah tersedia dan `firestore.rules` terbaru sudah dideploy.
+
+## Dokumentasi perubahan
+
+Riwayat perubahan teknis berada pada folder `docs/`. Dokumentasi lama tetap dipertahankan sebagai histori versi. Untuk kondisi aktual, gunakan source terbaru bersama:
+
+- `docs/FIRESTORE_SCHEMA.md`
+- `docs/PROJECT_ANALYSIS.md`
+- `docs/PERBAIKAN_V9_PENGEMBANGAN_LANJUTAN.md`

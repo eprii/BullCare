@@ -74,6 +74,11 @@ service cloud.firestore {
       allow create, update, delete: if isPetugas();
     }
 
+    match /bedah_bangkai/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isPetugas();
+    }
+
     match /pemotongan_bulu/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
@@ -89,12 +94,16 @@ service cloud.firestore {
       allow create, update, delete: if isPetugas();
     }
 
+    match /pengambilan_sample/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isPetugas();
+    }
+
     match /produksi_distribusi_semen_beku/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();
     }
 
-    // TAMBAHAN BIO SECURITY
     match /bio_security/{id} {
       allow read: if signedIn();
       allow create, update, delete: if isPetugas();

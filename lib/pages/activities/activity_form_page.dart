@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/app_date_utils.dart';
 import '../../utils/app_feedback.dart';
 import '../../utils/confirmation_dialog.dart';
+import '../../utils/firestore_utils.dart';
 import '../../utils/validators.dart';
 import '../../widgets/app_page_container.dart';
 import '../../widgets/empty_state.dart';
@@ -40,6 +41,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   final Map<String, TextEditingController> _controllers =
       <String, TextEditingController>{};
   final Map<String, bool> _booleanValues = <String, bool>{};
+  final Map<String, DateTime?> _dateValues = <String, DateTime?>{};
   final Map<String, String?> _healthCheckValues = <String, String?>{
     'feses': null,
     'pakan': null,
@@ -92,6 +94,10 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
           widget.initialValues[field.key];
       if (field.type == ActivityFieldType.boolean) {
         _booleanValues[field.key] = initialValue == true;
+      } else if (field.type == ActivityFieldType.date) {
+        _dateValues[field.key] = initialValue == null
+            ? null
+            : dateTimeFromFirestore(initialValue);
       } else {
         _controllers[field.key] = TextEditingController(
           text: initialValue?.toString() ?? '',
@@ -131,6 +137,28 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
           picked.day,
           _date.hour,
           _date.minute,
+        );
+      });
+    }
+  }
+
+
+  Future<void> _pickFieldDate(ActivityFieldDefinition field) async {
+    final DateTime now = DateTime.now();
+    final DateTime current = _dateValues[field.key] ?? _date;
+    final DateTime initialDate = current.isAfter(now) ? now : current;
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: now,
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _dateValues[field.key] = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
         );
       });
     }
@@ -178,6 +206,8 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     for (final ActivityFieldDefinition field in widget.definition.fields) {
       if (field.type == ActivityFieldType.boolean) {
         values[field.key] = _booleanValues[field.key] ?? false;
+      } else if (field.type == ActivityFieldType.date) {
+        values[field.key] = _dateValues[field.key];
       } else {
         final String text = _controllers[field.key]!.text.trim();
         values[field.key] = field.type == ActivityFieldType.decimal
@@ -197,6 +227,36 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     return values;
   }
 
+  bool _validateBedahBangkaiDates() {
+    if (widget.definition.collectionName != 'bedah_bangkai') return true;
+
+    final DateTime? tanggalMati = _dateValues['tanggal_mati'];
+    final DateTime? tanggalKirim =
+        _dateValues['tanggal_pengiriman_laboratorium'];
+    final DateTime? tanggalJawaban = _dateValues['tanggal_jawaban'];
+
+    if (tanggalMati == null) {
+      AppFeedback.showError(context, 'Tanggal mati wajib dipilih.');
+      return false;
+    }
+    if (tanggalKirim != null && tanggalKirim.isBefore(tanggalMati)) {
+      AppFeedback.showError(
+        context,
+        'Tanggal pengiriman ke laboratorium tidak boleh sebelum tanggal mati.',
+      );
+      return false;
+    }
+    final DateTime batasJawaban = tanggalKirim ?? tanggalMati;
+    if (tanggalJawaban != null && tanggalJawaban.isBefore(batasJawaban)) {
+      AppFeedback.showError(
+        context,
+        'Tanggal jawaban tidak boleh sebelum tanggal mati/pengiriman laboratorium.',
+      );
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _save() async {
     if (!widget.user.isPetugas) {
       AppFeedback.showError(
@@ -210,8 +270,9 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     final bool validForm = _formKey.currentState!.validate();
     final bool validBoolean = _validateBooleanFields();
     final bool validDate = _validateDate();
+    final bool validBedahDates = _validateBedahBangkaiDates();
 
-    if (!validForm || !validBoolean || !validDate) {
+    if (!validForm || !validBoolean || !validDate || !validBedahDates) {
       AppFeedback.showError(
         context,
         'Periksa kembali data aktivitas sebelum disimpan.',
@@ -467,6 +528,9 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     if (field.type == ActivityFieldType.boolean) {
       return _booleanValues[field.key] == true;
     }
+    if (field.type == ActivityFieldType.date) {
+      return _dateValues[field.key] != null;
+    }
     final String text = _controllers[field.key]?.text.trim() ?? '';
     if (text.isEmpty) return false;
     if (field.type == ActivityFieldType.decimal) {
@@ -511,6 +575,48 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       );
     }
 
+    if (field.type == ActivityFieldType.date) {
+      final DateTime? selected = _dateValues[field.key];
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: InkWell(
+          onTap: () => _pickFieldDate(field),
+          borderRadius: BorderRadius.circular(14),
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: field.label,
+              prefixIcon: const Icon(Icons.calendar_month_outlined),
+              suffixIcon: selected != null
+                  ? field.required
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppTheme.primary,
+                        )
+                      : IconButton(
+                          tooltip: 'Kosongkan tanggal',
+                          onPressed: () {
+                            setState(() => _dateValues[field.key] = null);
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        )
+                  : null,
+            ),
+            child: Text(
+              selected == null
+                  ? 'Pilih tanggal'
+                  : AppDateUtils.formatDate(selected),
+              style: TextStyle(
+                color: selected == null
+                    ? AppTheme.textSecondary
+                    : AppTheme.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     final bool decimal = field.type == ActivityFieldType.decimal;
     final bool multiline = field.type == ActivityFieldType.multiline;
     final int maxLength = multiline ? 1000 : 250;
@@ -546,6 +652,32 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
         ),
         validator: (value) {
           if (!field.required && (value == null || value.trim().isEmpty)) {
+            return null;
+          }
+          if (widget.definition.collectionName == 'bedah_bangkai' &&
+              field.key == 'pemeriksaan_organ') {
+            final String text = value?.trim() ?? '';
+            if (text.isEmpty) {
+              return '${field.label} wajib diisi.';
+            }
+            final List<String> lines = text
+                .split(RegExp(r'\r?\n'))
+                .map((line) => line.trim())
+                .where((line) => line.isNotEmpty)
+                .toList(growable: false);
+            final bool hasilWajib = _dateValues['tanggal_jawaban'] != null;
+            final bool validFormat = lines.isNotEmpty && lines.every((line) {
+              final int separator = line.indexOf('|');
+              if (separator <= 0) return false;
+              final String organ = line.substring(0, separator).trim();
+              final String hasil = line.substring(separator + 1).trim();
+              return organ.isNotEmpty && (!hasilWajib || hasil.isNotEmpty);
+            });
+            if (!validFormat) {
+              return hasilWajib
+                  ? 'Setiap organ wajib memiliki hasil: Nama organ | Hasil pemeriksaan.'
+                  : 'Gunakan format satu baris: Nama organ | Hasil pemeriksaan. Hasil boleh kosong sebelum tanggal jawaban diisi.';
+            }
             return null;
           }
           return decimal

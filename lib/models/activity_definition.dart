@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum ActivityFieldType { text, multiline, decimal, boolean }
+enum ActivityFieldType { text, multiline, decimal, boolean, date }
 
 class ActivityFieldDefinition {
   final String key;
@@ -123,6 +123,19 @@ class ActivityCatalog {
       ],
     ),
     ActivityDefinition(
+      collectionName: 'bedah_bangkai',
+      label: 'Bedah Bangkai',
+      icon: Icons.biotech_outlined,
+      fields: <ActivityFieldDefinition>[
+        ActivityFieldDefinition(key: 'tanggal_mati', label: 'Tanggal mati', type: ActivityFieldType.date),
+        ActivityFieldDefinition(key: 'peralatan', label: 'Peralatan', type: ActivityFieldType.multiline),
+        ActivityFieldDefinition(key: 'pemeriksaan_organ', label: 'Sampel/Organ dan Hasil Pemeriksaan (Organ | Hasil)', type: ActivityFieldType.multiline),
+        ActivityFieldDefinition(key: 'tanggal_pengiriman_laboratorium', label: 'Tanggal pengiriman ke laboratorium', type: ActivityFieldType.date, required: false),
+        ActivityFieldDefinition(key: 'tanggal_jawaban', label: 'Tanggal jawaban', type: ActivityFieldType.date, required: false),
+        ActivityFieldDefinition(key: 'keterangan', label: 'Keterangan', type: ActivityFieldType.multiline, required: false),
+      ],
+    ),
+    ActivityDefinition(
       collectionName: 'pemotongan_bulu',
       label: 'Pemotongan Bulu',
       icon: Icons.content_cut_outlined,
@@ -179,6 +192,19 @@ class ActivityCatalog {
           type: ActivityFieldType.multiline,
           required: false,
         ),
+      ],
+    ),
+    ActivityDefinition(
+      collectionName: 'pengambilan_sample',
+      label: 'Pengambilan Sample',
+      icon: Icons.science_outlined,
+      fields: <ActivityFieldDefinition>[
+        ActivityFieldDefinition(key: 'darah', label: 'Darah', type: ActivityFieldType.boolean),
+        ActivityFieldDefinition(key: 'serum', label: 'Serum', type: ActivityFieldType.boolean),
+        ActivityFieldDefinition(key: 'ulas_darah', label: 'Ulas Darah', type: ActivityFieldType.boolean),
+        ActivityFieldDefinition(key: 'swab', label: 'Swab', type: ActivityFieldType.boolean),
+        ActivityFieldDefinition(key: 'feses', label: 'Feses', type: ActivityFieldType.boolean),
+        ActivityFieldDefinition(key: 'keterangan', label: 'Keterangan', type: ActivityFieldType.multiline, required: false),
       ],
     ),
   ];

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/activity_record.dart';
 import 'base_activity_service.dart';
+import 'bedah_bangkai_service.dart';
 import 'bio_security_service.dart';
 import 'pemberian_obat_cacing_service.dart';
 import 'pemberian_pakan_service.dart';
@@ -10,6 +11,7 @@ import 'pemeriksaan_kesehatan_service.dart';
 import 'pemotongan_bulu_service.dart';
 import 'pemotongan_kuku_service.dart';
 import 'penampungan_semen_service.dart';
+import 'pengambilan_sample_service.dart';
 import 'pengobatan_service.dart';
 import 'pengukuran_service.dart';
 import 'penimbangan_service.dart';
@@ -28,9 +30,11 @@ class ActivityServiceRegistry {
     'pengobatan': PengobatanService(),
     'pemberian_obat_cacing': PemberianObatCacingService(),
     'pencegahan_ektoparasit': PencegahanEktoparasitService(),
+    'bedah_bangkai': BedahBangkaiService(),
     'pemotongan_bulu': PemotonganBuluService(),
     'pemotongan_kuku': PemotonganKukuService(),
     'penampungan_semen': PenampunganSemenService(),
+    'pengambilan_sample': PengambilanSampleService(),
     'bio_security': BioSecurityService(),
   };
 
@@ -57,7 +61,9 @@ class ActivityServiceRegistry {
       return await read();
     } on FirebaseException catch (error) {
       if ((service.collectionName == 'pencegahan_ektoparasit' ||
-              service.collectionName == 'bio_security') &&
+              service.collectionName == 'bio_security' ||
+              service.collectionName == 'pengambilan_sample' ||
+              service.collectionName == 'bedah_bangkai') &&
           error.code == 'permission-denied') {
         return <ActivityRecord>[];
       }
@@ -69,8 +75,7 @@ class ActivityServiceRegistry {
   static Future<List<ActivityRecord>> getHistoryForBull(
     String bullId,
   ) async {
-    final List<List<ActivityRecord>> groups =
-        await Future.wait(
+    final List<List<ActivityRecord>> groups = await Future.wait(
       allServices.map(
         (service) => _readSafely(
           service,
@@ -90,8 +95,7 @@ class ActivityServiceRegistry {
   }
 
   static Future<List<ActivityRecord>> getAll() async {
-    final List<List<ActivityRecord>> groups =
-        await Future.wait(
+    final List<List<ActivityRecord>> groups = await Future.wait(
       allServices.map(
         (service) => _readSafely(
           service,
@@ -113,8 +117,7 @@ class ActivityServiceRegistry {
   static Future<List<ActivityRecord>> getRecent({
     int perCollection = 4,
   }) async {
-    final List<List<ActivityRecord>> groups =
-        await Future.wait(
+    final List<List<ActivityRecord>> groups = await Future.wait(
       allServices.map(
         (service) => _readSafely(
           service,
