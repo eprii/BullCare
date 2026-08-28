@@ -70,7 +70,8 @@ service cloud.firestore {
       allow create, update, delete: if isPetugas();
     }
     match /pemotongan_kuku/{id} {
-      allow read: if signedIn();
+      allow read: if signedIn();firebase logout
+firebase login
       allow create, update, delete: if isPetugas();
     }
     match /penampungan_semen/{id} {
