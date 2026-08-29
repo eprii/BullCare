@@ -39,6 +39,7 @@ class _BullFormPageState extends State<BullFormPage> {
   late final TextEditingController _code;
   late final TextEditingController _name;
   late final TextEditingController _breed;
+  String _kategori = '';
   late final TextEditingController _age;
   late final TextEditingController _cage;
   String? _strawColor;
@@ -61,6 +62,7 @@ class _BullFormPageState extends State<BullFormPage> {
     _code = TextEditingController(text: bull?.kode_bull ?? '');
     _name = TextEditingController(text: bull?.nama ?? '');
     _breed = TextEditingController(text: bull?.bangsa ?? '');
+    _kategori = bull?.kategori ?? '';
     _age = TextEditingController(text: bull?.umur ?? '');
     _cage = TextEditingController(text: bull?.nomor_kandang ?? '');
     _strawColor = _initialStrawColor(bull?.warna_straw);
@@ -314,6 +316,7 @@ class _BullFormPageState extends State<BullFormPage> {
             kode_bull: _code.text.trim(),
             nama: _name.text.trim(),
             bangsa: _breed.text.trim(),
+            kategori: _kategori,
             umur: normalizedAge,
             nomor_kandang: _cage.text.trim(),
             warna_straw: _strawColor?.trim() ?? '',
@@ -330,6 +333,7 @@ class _BullFormPageState extends State<BullFormPage> {
           kodeBull: _code.text,
           nama: _name.text,
           bangsa: _breed.text,
+          kategori: _kategori,
           umur: normalizedAge,
           nomorKandang: _cage.text,
           warnaStraw: _strawColor ?? '',
@@ -448,6 +452,27 @@ class _BullFormPageState extends State<BullFormPage> {
                       Icons.category_outlined,
                       next: true,
                       maxLength: 80,
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      initialValue: _kategori.isEmpty ? null : _kategori,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori Bull',
+                        prefixIcon: Icon(Icons.label_outline_rounded),
+                      ),
+                      items: const <DropdownMenuItem<String>>[
+                        DropdownMenuItem(value: 'Sapi Potong', child: Text('Sapi Potong')),
+                        DropdownMenuItem(value: 'Kerbau', child: Text('Kerbau')),
+                        DropdownMenuItem(value: 'Sexing', child: Text('Sexing')),
+                        DropdownMenuItem(value: 'Non-LSPro', child: Text('Non-LSPro')),
+                      ],
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'Kategori Bull wajib dipilih.'
+                          : null,
+                      onChanged: (value) {
+                        setState(() => _kategori = value ?? '');
+                      },
                     ),
                     _field(
                       _age,

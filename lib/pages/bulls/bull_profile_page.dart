@@ -746,6 +746,12 @@ class _InformationCard extends StatelessWidget {
           ),
           const Divider(height: 22),
           _InfoRow(
+            icon: Icons.label_outline_rounded,
+            label: 'Kategori',
+            value: bull.kategori.isEmpty ? '-' : bull.kategori,
+          ),
+          const Divider(height: 22),
+          _InfoRow(
             icon: Icons.home_work_outlined,
             label: 'Nomor kandang',
             value: bull.nomor_kandang,
