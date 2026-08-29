@@ -85,7 +85,7 @@ class _BullListPageState extends State<BullListPage> {
             children: <Widget>[
               const SizedBox(height: 2),
               _searchAndFilterRow(),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Expanded(child: _buildContent()),
             ],
           ),
@@ -112,9 +112,10 @@ class _BullListPageState extends State<BullListPage> {
           return ErrorView(message: snapshot.error.toString());
         }
 
+        final List<BullModel> allBulls = snapshot.data ?? <BullModel>[];
         final String normalizedQuery = _query.trim().toLowerCase();
         final String normalizedBreedFilter = _breedFilter.trim().toLowerCase();
-        final List<BullModel> bulls = (snapshot.data ?? <BullModel>[])
+        final List<BullModel> bulls = allBulls
             .where((bull) {
               final String haystack =
                   '${bull.nama} ${bull.kode_bull} ${bull.bangsa} ${bull.nomor_kandang} ${bull.umur}'
@@ -135,44 +136,100 @@ class _BullListPageState extends State<BullListPage> {
             _statusFilter.isEmpty &&
             _breedFilter.isEmpty;
 
-        if (bulls.isEmpty) {
-          return EmptyState(
-            icon: Icons.search_off_rounded,
-            title: noFilter ? 'Belum ada data bull' : 'Bull tidak ditemukan',
-            message: noFilter
-                ? widget.user.isPetugas
-                    ? 'Tambahkan data bull pertama untuk mulai mencatat aktivitas pemeliharaan.'
-                    : 'Belum ada data bull yang dapat ditampilkan.'
-                : 'Ubah pencarian atau filter dan coba kembali.',
-            action: widget.user.isPetugas && noFilter
-                ? FilledButton.icon(
-                    onPressed: _addBull,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Tambah Bull'),
-                  )
-                : null,
-          );
-        }
-
-        return ListView.separated(
-          padding: EdgeInsets.fromLTRB(
-            0,
-            0,
-            0,
-            widget.selectionMode || !widget.user.isPetugas ? 24 : 96,
-          ),
-          itemCount: bulls.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final BullModel bull = bulls[index];
-            return _BullCard(
-              bull: bull,
-              imageIndex: _imageIndexForBull(bull),
-              onTap: () => _openBull(bull),
-            );
-          },
+        return Column(
+          children: <Widget>[
+            if (!widget.selectionMode) ...<Widget>[
+              _breedSummaryRow(allBulls),
+              const SizedBox(height: 14),
+            ],
+            Expanded(
+              child: bulls.isEmpty
+                  ? EmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: noFilter
+                          ? 'Belum ada data bull'
+                          : 'Bull tidak ditemukan',
+                      message: noFilter
+                          ? widget.user.isPetugas
+                              ? 'Tambahkan data bull pertama untuk mulai mencatat aktivitas pemeliharaan.'
+                              : 'Belum ada data bull yang dapat ditampilkan.'
+                          : 'Ubah pencarian atau filter dan coba kembali.',
+                      action: widget.user.isPetugas && noFilter
+                          ? FilledButton.icon(
+                              onPressed: _addBull,
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('Tambah Bull'),
+                            )
+                          : null,
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.fromLTRB(
+                        0,
+                        0,
+                        0,
+                        widget.selectionMode || !widget.user.isPetugas
+                            ? 24
+                            : 96,
+                      ),
+                      itemCount: bulls.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final BullModel bull = bulls[index];
+                        return _BullCard(
+                          bull: bull,
+                          imageIndex: _imageIndexForBull(bull),
+                          onTap: () => _openBull(bull),
+                        );
+                      },
+                    ),
+            ),
+          ],
         );
       },
+    );
+  }
+
+  Widget _breedSummaryRow(List<BullModel> bulls) {
+    final Map<String, _BreedCount> counts = <String, _BreedCount>{};
+
+    for (final BullModel bull in bulls) {
+      final String label = bull.bangsa.trim();
+      if (label.isEmpty) continue;
+
+      final String key = label.toLowerCase();
+      final _BreedCount? current = counts[key];
+      counts[key] = _BreedCount(
+        label: current?.label ?? label,
+        count: (current?.count ?? 0) + 1,
+      );
+    }
+
+    final List<_BreedCount> breeds = counts.values.toList()
+      ..sort(
+        (a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()),
+      );
+
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: breeds.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _BullSummaryChip(
+              label: 'Semua',
+              count: bulls.length,
+            );
+          }
+
+          final _BreedCount breed = breeds[index - 1];
+          return _BullSummaryChip(
+            label: breed.label,
+            count: breed.count,
+          );
+        },
+      ),
     );
   }
 
@@ -621,6 +678,47 @@ class _BullListPageState extends State<BullListPage> {
 }
 
 enum _BullSortMode { none, nameAsc, nameDesc, ageAsc, ageDesc }
+
+class _BreedCount {
+  const _BreedCount({
+    required this.label,
+    required this.count,
+  });
+
+  final String label;
+  final int count;
+}
+
+class _BullSummaryChip extends StatelessWidget {
+  const _BullSummaryChip({
+    required this.label,
+    required this.count,
+  });
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F3F1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE1E4E0)),
+      ),
+      child: Text(
+        '$label ($count)',
+        style: const TextStyle(
+          color: Color(0xFF626762),
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
+          height: 1,
+        ),
+      ),
+    );
+  }
+}
 
 class _BullFilterResult {
   const _BullFilterResult({
