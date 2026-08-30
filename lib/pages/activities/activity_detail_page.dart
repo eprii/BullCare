@@ -7,6 +7,7 @@ import '../../models/user_model.dart';
 import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_date_utils.dart';
+import '../../utils/bull_sni_status.dart';
 import '../../utils/firestore_utils.dart';
 import '../../widgets/app_page_container.dart';
 import '../../widgets/bull_avatar.dart';
@@ -16,10 +17,12 @@ class ActivityDetailPage extends StatefulWidget {
     super.key,
     required this.record,
     this.bull,
+    this.onEdit,
   });
 
   final ActivityRecord record;
   final BullModel? bull;
+  final Future<bool> Function()? onEdit;
 
   @override
   State<ActivityDetailPage> createState() => _ActivityDetailPageState();
@@ -41,7 +44,8 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
   @override
   Widget build(BuildContext context) {
     final ActivityRecord record = widget.record;
-    final BullModel? bull = widget.bull;
+    final bool isProduction =
+        record.collectionName == 'produksi_distribusi_semen_beku';
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -50,95 +54,213 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
         maxWidth: 720,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 10, 0, 28),
-          children: <Widget>[
-            _ActivityHeader(record: record, bull: bull),
-            const SizedBox(height: 14),
-            _SectionCard(
-              title: 'Data Bull',
-              icon: Icons.pets_outlined,
-              children: <Widget>[
-                _DetailRow(
-                  label: 'Nama bull',
-                  value: bull?.nama ?? 'Bull tidak ditemukan',
-                ),
-                _DetailRow(
-                  label: 'Kode bull',
-                  value: bull?.kode_bull ?? record.bull_id,
-                ),
-                if (bull != null) ...<Widget>[
-                  _DetailRow(label: 'Bangsa', value: bull.bangsa),
-                  _DetailRow(
-                    label: 'Nomor kandang',
-                    value: bull.nomor_kandang,
-                  ),
-                  _DetailRow(label: 'Status', value: bull.status),
-                ],
-              ],
-            ),
-            const SizedBox(height: 14),
-            _SectionCard(
-              title: 'Pekerjaan yang Dilakukan',
-              icon: Icons.assignment_turned_in_outlined,
-              children: record.definition.fields.map((field) {
-                return _DetailRow(
-                  label: field.label,
-                  value: _displayValue(field, record.data[field.key]),
-                );
-              }).toList(growable: false),
-            ),
-            const SizedBox(height: 14),
-            _SectionCard(
-              title: 'Petugas Pelaksana',
-              icon: Icons.badge_outlined,
-              children: <Widget>[
-                FutureBuilder<UserModel?>(
-                  future: _petugasFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        child: LinearProgressIndicator(),
-                      );
-                    }
-
-                    final UserModel? petugas = snapshot.data;
-                    final String namaPetugas =
-                        record.data['nama_petugas']?.toString().trim() ?? '';
-                    return _DetailRow(
-                      label: 'Nama petugas',
-                      value: namaPetugas.isNotEmpty
-                          ? namaPetugas
-                          : petugas?.nama.trim().isNotEmpty == true
-                              ? petugas!.nama
-                              : 'Nama petugas belum dicatat',
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _SectionCard(
-              title: 'Informasi Pencatatan',
-              icon: Icons.info_outline,
-              children: <Widget>[
-                _DetailRow(
-                  label: 'Tanggal aktivitas',
-                  value: AppDateUtils.formatDateTime(record.tanggal),
-                ),
-                _DetailRow(
-                  label: 'Dibuat',
-                  value: AppDateUtils.formatDateTime(record.created_at),
-                ),
-                _DetailRow(
-                  label: 'Terakhir diperbarui',
-                  value: AppDateUtils.formatDateTime(record.updated_at),
-                ),
-                _DetailRow(label: 'ID aktivitas', value: record.id),
-              ],
-            ),
-          ],
+          children: isProduction
+              ? _productionChildren(record)
+              : _standardChildren(record, widget.bull),
         ),
       ),
+    );
+  }
+
+  List<Widget> _productionChildren(ActivityRecord record) {
+    final int year = _asInt(record.data['tahun']);
+    final int month = _asInt(record.data['bulan']);
+    return <Widget>[
+      _ActivityHeader(record: record, bull: null),
+      const SizedBox(height: 14),
+      _SectionCard(
+        title: 'Data Produksi Semen Beku',
+        icon: Icons.inventory_2_outlined,
+        children: <Widget>[
+          _DetailRow(
+            label: 'Kategori',
+            value: record.data['kategori']?.toString() ?? '-',
+          ),
+          _DetailRow(
+            label: 'Bangsa',
+            value: record.data['bangsa']?.toString() ?? '-',
+          ),
+          if (_normalize(record.data['kategori']) == 'sexing')
+            _DetailRow(
+              label: 'Status SNI',
+              value: _sniLabel(record.data['status_sni']),
+            ),
+          _DetailRow(
+            label: 'Periode',
+            value: '${_monthName(month)} $year',
+          ),
+          _DetailRow(
+            label: 'Jumlah pejantan',
+            value: '${_asInt(record.data['jumlah_pejantan'])} ekor',
+          ),
+          _DetailRow(
+            label: 'Stock $year',
+            value: _displayNumber(
+              _firstValue(record.data, <String>['stock_tahun', 'stock_awal']),
+            ),
+          ),
+          _DetailRow(
+            label: 'Minggu I',
+            value: _displayNumber(record.data['produksi_minggu_i']),
+          ),
+          _DetailRow(
+            label: 'Minggu II',
+            value: _displayNumber(record.data['produksi_minggu_ii']),
+          ),
+          _DetailRow(
+            label: 'Minggu III',
+            value: _displayNumber(record.data['produksi_minggu_iii']),
+          ),
+          _DetailRow(
+            label: 'Minggu IV',
+            value: _displayNumber(record.data['produksi_minggu_iv']),
+          ),
+          _DetailRow(
+            label: 'Minggu V',
+            value: _displayNumber(record.data['produksi_minggu_v']),
+          ),
+          _DetailRow(
+            label: 'Jumlah Produksi',
+            value: _displayNumber(record.data['jumlah_produksi']),
+          ),
+          _DetailRow(
+            label: 'Afkir',
+            value: _displayNumber(record.data['afkir']),
+          ),
+          _DetailRow(
+            label: 'Distribusi Komandan',
+            value: _displayNumber(record.data['distribusi_komandan']),
+          ),
+          _DetailRow(
+            label: 'Distribusi Non Sikomandan',
+            value: _displayNumber(record.data['distribusi_non_sikomandan']),
+          ),
+          _DetailRow(
+            label: 'Jumlah Distribusi',
+            value: _displayNumber(record.data['jumlah_distribusi']),
+          ),
+          _DetailRow(
+            label: 'Total Stock',
+            value: _displayNumber(record.data['stock_akhir']),
+          ),
+        ],
+      ),
+      const SizedBox(height: 14),
+      _petugasCard(record),
+      const SizedBox(height: 14),
+      _SectionCard(
+        title: 'Informasi Pencatatan',
+        icon: Icons.info_outline,
+        children: <Widget>[
+          _DetailRow(
+            label: 'Periode produksi',
+            value: '${_monthName(month)} $year',
+          ),
+          _DetailRow(
+            label: 'Dibuat',
+            value: AppDateUtils.formatDateTime(record.created_at),
+          ),
+          _DetailRow(
+            label: 'Terakhir diperbarui',
+            value: AppDateUtils.formatDateTime(record.updated_at),
+          ),
+          const _DetailRow(
+            label: 'Akses perubahan',
+            value: 'Kelola dari halaman Produksi Semen Beku',
+          ),
+          _DetailRow(label: 'ID aktivitas', value: record.id),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _standardChildren(ActivityRecord record, BullModel? bull) {
+    return <Widget>[
+      _ActivityHeader(record: record, bull: bull),
+      const SizedBox(height: 14),
+      _SectionCard(
+        title: 'Data Bull',
+        icon: Icons.pets_outlined,
+        children: <Widget>[
+          _DetailRow(
+            label: 'Nama bull',
+            value: bull?.nama ?? 'Bull tidak ditemukan',
+          ),
+          _DetailRow(
+            label: 'Kode bull',
+            value: bull?.kode_bull ?? record.bull_id,
+          ),
+          if (bull != null) ...<Widget>[
+            _DetailRow(label: 'Bangsa', value: bull.bangsa),
+            _DetailRow(label: 'Nomor kandang', value: bull.nomor_kandang),
+            _DetailRow(label: 'Status', value: bull.status),
+          ],
+        ],
+      ),
+      const SizedBox(height: 14),
+      _SectionCard(
+        title: 'Pekerjaan yang Dilakukan',
+        icon: Icons.assignment_turned_in_outlined,
+        children: record.definition.fields.map((field) {
+          return _DetailRow(
+            label: field.label,
+            value: _displayValue(field, record.data[field.key]),
+          );
+        }).toList(growable: false),
+      ),
+      const SizedBox(height: 14),
+      _petugasCard(record),
+      const SizedBox(height: 14),
+      _SectionCard(
+        title: 'Informasi Pencatatan',
+        icon: Icons.info_outline,
+        children: <Widget>[
+          _DetailRow(
+            label: 'Tanggal aktivitas',
+            value: AppDateUtils.formatDateTime(record.tanggal),
+          ),
+          _DetailRow(
+            label: 'Dibuat',
+            value: AppDateUtils.formatDateTime(record.created_at),
+          ),
+          _DetailRow(
+            label: 'Terakhir diperbarui',
+            value: AppDateUtils.formatDateTime(record.updated_at),
+          ),
+          _DetailRow(label: 'ID aktivitas', value: record.id),
+        ],
+      ),
+    ];
+  }
+
+  Widget _petugasCard(ActivityRecord record) {
+    return _SectionCard(
+      title: 'Petugas Pelaksana',
+      icon: Icons.badge_outlined,
+      children: <Widget>[
+        FutureBuilder<UserModel?>(
+          future: _petugasFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: LinearProgressIndicator(),
+              );
+            }
+            final UserModel? petugas = snapshot.data;
+            final String namaPetugas =
+                record.data['nama_petugas']?.toString().trim() ?? '';
+            return _DetailRow(
+              label: 'Nama petugas',
+              value: namaPetugas.isNotEmpty
+                  ? namaPetugas
+                  : petugas?.nama.trim().isNotEmpty == true
+                      ? petugas!.nama
+                      : 'Nama petugas belum dicatat',
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -150,14 +272,12 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
       if (value == null) return '-';
       return AppDateUtils.formatDate(dateTimeFromFirestore(value));
     }
-
     if (value == null || value.toString().trim().isEmpty) return '-';
 
     String display = value.toString();
     if (value is double && value == value.roundToDouble()) {
       display = value.toInt().toString();
     }
-
     if (field.suffix != null) return '$display ${field.suffix}';
     return display;
   }
@@ -171,16 +291,22 @@ class _ActivityHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isProduction =
+        record.collectionName == 'produksi_distribusi_semen_beku';
+    final int year = _asInt(record.data['tahun']);
+    final int month = _asInt(record.data['bulan']);
+    final String productionOwner = <String>[
+      record.data['kategori']?.toString().trim() ?? '',
+      record.data['bangsa']?.toString().trim() ?? '',
+    ].where((value) => value.isNotEmpty).join(' • ');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[
-            Color(0xFF0B8A36),
-            Color(0xFF05702B),
-          ],
+          colors: <Color>[Color(0xFF0B8A36), Color(0xFF05702B)],
         ),
         borderRadius: BorderRadius.circular(22),
       ),
@@ -215,7 +341,11 @@ class _ActivityHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  bull?.nama ?? 'Bull tidak ditemukan',
+                  isProduction
+                      ? (productionOwner.isEmpty
+                          ? 'Produksi semen beku'
+                          : productionOwner)
+                      : bull?.nama ?? 'Bull tidak ditemukan',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -225,7 +355,9 @@ class _ActivityHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  AppDateUtils.formatDateTime(record.tanggal),
+                  isProduction
+                      ? 'Periode ${_monthName(month)} $year • diperbarui ${AppDateUtils.formatDateTime(record.updated_at)}'
+                      : AppDateUtils.formatDateTime(record.tanggal),
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 12,
@@ -331,4 +463,63 @@ class _DetailRow extends StatelessWidget {
       ),
     );
   }
+}
+
+dynamic _firstValue(Map<String, dynamic> data, List<String> keys) {
+  for (final String key in keys) {
+    final dynamic value = data[key];
+    if (_hasValue(value)) return value;
+  }
+  return null;
+}
+
+bool _hasValue(dynamic value) =>
+    value != null && value.toString().trim().isNotEmpty;
+
+String _displayNumber(dynamic value) =>
+    _hasValue(value) ? _formatNumber(_asInt(value)) : '-';
+
+String _normalize(dynamic value) =>
+    value?.toString().trim().toLowerCase() ?? '';
+
+String _sniLabel(dynamic value) {
+  final String normalized = BullSniStatus.normalize(value?.toString());
+  if (normalized == BullSniStatus.bersertifikasi) return 'SNI';
+  if (normalized == BullSniStatus.belumBersertifikasi) return 'NON SNI';
+  return 'Belum terklasifikasi';
+}
+
+int _asInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+String _formatNumber(int value) {
+  final String digits = value.abs().toString();
+  final StringBuffer buffer = StringBuffer();
+  for (int i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(digits[i]);
+  }
+  return value < 0 ? '-$buffer' : buffer.toString();
+}
+
+String _monthName(int month) {
+  const List<String> months = <String>[
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+  if (month < 1 || month > 12) return 'Bulan';
+  return months[month - 1];
 }

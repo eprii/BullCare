@@ -16,6 +16,7 @@ import '../../widgets/error_view.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/section_header.dart';
 import '../activities/activity_detail_page.dart';
+import '../activities/produksi_distribusi_semen_beku_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
@@ -174,6 +175,22 @@ class _DashboardPageState extends State<DashboardPage> {
                           accent: const Color(0xFF2288C7),
                           onTap: widget.onOpenActivities,
                         ),
+                        _SummaryCard(
+                          icon: Icons.inventory_2_outlined,
+                          value: _formatNumber(data.totalProduksiSemenBeku),
+                          label: 'Total Produksi Semen Beku',
+                          accent: const Color(0xFF6C63B8),
+                          onTap: () async {
+                            await Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => ProduksiDistribusiSemenBekuPage(
+                                  user: widget.user,
+                                ),
+                              ),
+                            );
+                            if (mounted) _refresh();
+                          },
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -197,8 +214,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ...data.recentActivities.take(5).map((ActivityRecord record) {
                         return ActivityTile(
                           record: record,
-                          bullName: data.bullNames[record.bull_id] ??
-                              'Bull tidak ditemukan',
+                          bullName: _activityOwnerLabel(record, data),
                           compact: true,
                           onTap: () {
                             Navigator.of(context).push(
@@ -220,6 +236,30 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  String _activityOwnerLabel(ActivityRecord record, DashboardData data) {
+    if (record.collectionName == 'produksi_distribusi_semen_beku') {
+      final String kategori =
+          record.data['kategori']?.toString().trim() ?? '';
+      final String bangsa = record.data['bangsa']?.toString().trim() ?? '';
+      final List<String> parts = <String>[
+        if (kategori.isNotEmpty) kategori,
+        if (bangsa.isNotEmpty) bangsa,
+      ];
+      return parts.isEmpty ? 'Produksi semen beku' : parts.join(' • ');
+    }
+    return data.bullNames[record.bull_id] ?? 'Bull tidak ditemukan';
+  }
+
+  String _formatNumber(int value) {
+    final String digits = value.abs().toString();
+    final StringBuffer buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(digits[i]);
+    }
+    return value < 0 ? '-$buffer' : buffer.toString();
   }
 
   String _firstName(String name) {

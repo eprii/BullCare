@@ -110,6 +110,12 @@ class _ReportPageState extends State<ReportPage> {
       label: 'Pengambilan Sample',
       icon: Icons.science_outlined,
     ),
+    _ReportSourceOption(
+      id: 'produksi_distribusi_semen_beku',
+      collectionName: 'produksi_distribusi_semen_beku',
+      label: 'Produksi & Distribusi Semen Beku',
+      icon: Icons.inventory_2_outlined,
+    ),
   ];
 
   _ReportSourceOption? get _selectedSource {

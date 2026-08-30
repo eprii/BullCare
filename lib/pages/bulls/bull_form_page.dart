@@ -32,6 +32,7 @@ class BullFormPage extends StatefulWidget {
 class _BullFormPageState extends State<BullFormPage> {
   static const int _maxPhotoBytes = 450 * 1024;
   static const int _maxBackgroundPhotoBytes = 220 * 1024;
+  static const String _newBreedValue = '__buat_bangsa_baru__';
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final BullService _service = BullService();
@@ -40,6 +41,10 @@ class _BullFormPageState extends State<BullFormPage> {
   late final TextEditingController _name;
   late final TextEditingController _breed;
   String _kategori = '';
+  String? _selectedBreed;
+  bool _creatingNewBreed = false;
+  bool _loadingBreeds = true;
+  List<BullModel> _breedSourceBulls = <BullModel>[];
   late final TextEditingController _age;
   late final TextEditingController _cage;
   String? _strawColor;
@@ -63,6 +68,8 @@ class _BullFormPageState extends State<BullFormPage> {
     _name = TextEditingController(text: bull?.nama ?? '');
     _breed = TextEditingController(text: bull?.bangsa ?? '');
     _kategori = bull?.kategori ?? '';
+    final String initialBreed = bull?.bangsa.trim() ?? '';
+    _selectedBreed = initialBreed.isEmpty ? null : initialBreed;
     _age = TextEditingController(text: bull?.umur ?? '');
     _cage = TextEditingController(text: bull?.nomor_kandang ?? '');
     _strawColor = _initialStrawColor(bull?.warna_straw);
@@ -71,6 +78,7 @@ class _BullFormPageState extends State<BullFormPage> {
     _status = BullStatus.normalize(bull?.status);
     final String normalizedSni = BullSniStatus.normalize(bull?.status_sni);
     _statusSni = normalizedSni.isEmpty ? null : normalizedSni;
+    _loadBreedOptions();
   }
 
   @override
@@ -176,6 +184,176 @@ class _BullFormPageState extends State<BullFormPage> {
     if (age == null) return 'Umur harus berupa angka, misalnya 2 atau 1.5.';
     if (age <= 0 || age > 30) return 'Umur harus lebih dari 0 dan maksimal 30 tahun.';
     return null;
+  }
+
+  Future<void> _loadBreedOptions() async {
+    try {
+      final List<BullModel> bulls = await _service.getBulls();
+      if (!mounted) return;
+      setState(() {
+        _breedSourceBulls = bulls;
+        _loadingBreeds = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _loadingBreeds = false);
+      AppFeedback.showError(
+        context,
+        'Daftar bangsa gagal dimuat: $error',
+      );
+    }
+  }
+
+  List<String> get _availableBreedOptions {
+    final String selectedCategory = _kategori.trim().toLowerCase();
+    if (selectedCategory.isEmpty) return <String>[];
+
+    final Map<String, String> unique = <String, String>{};
+    for (final BullModel bull in _breedSourceBulls) {
+      if (bull.kategori.trim().toLowerCase() != selectedCategory) continue;
+      final String breed = bull.bangsa.trim();
+      if (breed.isEmpty) continue;
+      unique.putIfAbsent(breed.toLowerCase(), () => breed);
+    }
+
+    final String current = _selectedBreed?.trim() ?? '';
+    if (current.isNotEmpty) {
+      unique.putIfAbsent(current.toLowerCase(), () => current);
+    }
+
+    final List<String> values = unique.values.toList(growable: false);
+    values.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return values;
+  }
+
+  String? _validateNewBreed(String? value) {
+    final String? required = Validators.requiredText(
+      value,
+      label: 'Bangsa baru',
+      maxLength: 80,
+    );
+    if (required != null) return required;
+
+    final String normalized = value!.trim().toLowerCase();
+    for (final String existing in _availableBreedOptions) {
+      if (existing.trim().toLowerCase() == normalized) {
+        return 'Bangsa $existing sudah tersedia. Pilih dari daftar bangsa.';
+      }
+    }
+    return null;
+  }
+
+  Widget _breedSelector() {
+    final List<String> options = _availableBreedOptions;
+    final String currentNormalized = _selectedBreed?.trim().toLowerCase() ?? '';
+    String? selectedValue;
+    if (_creatingNewBreed) {
+      selectedValue = _newBreedValue;
+    } else if (currentNormalized.isNotEmpty) {
+      for (final String option in options) {
+        if (option.toLowerCase() == currentNormalized) {
+          selectedValue = option;
+          break;
+        }
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (_creatingNewBreed)
+          _field(
+            _breed,
+            'Bangsa baru',
+            Icons.add_circle_outline_rounded,
+            next: true,
+            maxLength: 80,
+            validator: _validateNewBreed,
+          ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: DropdownButtonFormField<String>(
+            key: ValueKey<String>(
+              'breed-${_kategori.toLowerCase()}-${selectedValue ?? ''}-${options.join('|')}',
+            ),
+            initialValue: selectedValue,
+            isExpanded: true,
+            borderRadius: BorderRadius.circular(16),
+            dropdownColor: Colors.white,
+            menuMaxHeight: 360,
+            focusColor: AppTheme.primarySoft,
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppTheme.primary,
+            ),
+            decoration: InputDecoration(
+              labelText: 'Bangsa',
+              prefixIcon: const Icon(Icons.category_outlined),
+              helperText: _kategori.isEmpty
+                  ? 'Pilih kategori terlebih dahulu.'
+                  : _loadingBreeds
+                      ? 'Memuat daftar bangsa...'
+                      : options.isEmpty
+                          ? 'Belum ada bangsa pada kategori ini. Buat bangsa baru.'
+                          : 'Pilih bangsa yang tersedia atau buat bangsa baru.',
+            ),
+            items: <DropdownMenuItem<String>>[
+              const DropdownMenuItem<String>(
+                value: _newBreedValue,
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.add_circle_outline_rounded,
+                      color: AppTheme.primary,
+                      size: 20,
+                    ),
+                    SizedBox(width: 9),
+                    Text(
+                      'Buat Bangsa Baru',
+                      style: TextStyle(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ...options.map(
+                (breed) => DropdownMenuItem<String>(
+                  value: breed,
+                  child: Text(breed),
+                ),
+              ),
+            ],
+            validator: (value) {
+              if (_kategori.trim().isEmpty) {
+                return 'Kategori Bull wajib dipilih terlebih dahulu.';
+              }
+              if (_creatingNewBreed) return null;
+              if (value == null || value.trim().isEmpty) {
+                return 'Bangsa wajib dipilih.';
+              }
+              return null;
+            },
+            onChanged: _kategori.trim().isEmpty || _loadingBreeds
+                ? null
+                : (value) {
+                    setState(() {
+                      if (value == _newBreedValue) {
+                        _creatingNewBreed = true;
+                        _selectedBreed = null;
+                        _breed.clear();
+                      } else {
+                        _creatingNewBreed = false;
+                        _selectedBreed = value;
+                        _breed.text = value ?? '';
+                      }
+                    });
+                  },
+          ),
+        ),
+      ],
+    );
   }
 
   String? _initialStrawColor(String? value) {
@@ -446,34 +624,55 @@ class _BullFormPageState extends State<BullFormPage> {
                       next: true,
                       maxLength: 80,
                     ),
-                    _field(
-                      _breed,
-                      'Bangsa',
-                      Icons.category_outlined,
-                      next: true,
-                      maxLength: 80,
-                    ),
-                    const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       initialValue: _kategori.isEmpty ? null : _kategori,
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(16),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 280,
+                      focusColor: AppTheme.primarySoft,
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppTheme.primary,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Kategori Bull',
                         prefixIcon: Icon(Icons.label_outline_rounded),
                       ),
                       items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(value: 'Sapi Potong', child: Text('Sapi Potong')),
-                        DropdownMenuItem(value: 'Kerbau', child: Text('Kerbau')),
-                        DropdownMenuItem(value: 'Sexing', child: Text('Sexing')),
-                        DropdownMenuItem(value: 'Non-LSPro', child: Text('Non-LSPro')),
+                        DropdownMenuItem(
+                          value: 'Sapi Potong',
+                          child: Text('Sapi Potong'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Kerbau',
+                          child: Text('Kerbau'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Sexing',
+                          child: Text('Sexing'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Non-LSPro',
+                          child: Text('Non-LSPro'),
+                        ),
                       ],
-                      validator: (value) => (value == null || value.isEmpty)
-                          ? 'Kategori Bull wajib dipilih.'
-                          : null,
+                      validator: (value) => Validators.requiredText(
+                        value,
+                        label: 'Kategori Bull',
+                        maxLength: 40,
+                      ),
                       onChanged: (value) {
-                        setState(() => _kategori = value ?? '');
+                        setState(() {
+                          _kategori = value ?? '';
+                          _selectedBreed = null;
+                          _creatingNewBreed = false;
+                          _breed.clear();
+                        });
                       },
                     ),
+                    const SizedBox(height: 14),
+                    _breedSelector(),
                     _field(
                       _age,
                       'Umur (tahun)',

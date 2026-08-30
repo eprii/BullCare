@@ -26,6 +26,7 @@ import 'pemotongan_bulu_report_template_service.dart';
 import 'pemotongan_kuku_report_template_service.dart';
 import 'penampungan_semen_report_template_service.dart';
 import 'pencegahan_ektoparasit_report_template_service.dart';
+import 'produksi_distribusi_semen_beku_report_template_service.dart';
 import 'sanitasi_report_template_service.dart';
 import 'pengambilan_sample_report_template_service.dart';
 
@@ -153,6 +154,9 @@ class ReportExportService {
     final bool useBedahBangkaiTemplate = data.records.every(
       (record) => record.collectionName == 'bedah_bangkai',
     );
+    final bool useProduksiSemenBekuTemplate = data.records.every(
+      (record) => record.collectionName == 'produksi_distribusi_semen_beku',
+    );
 
     Uint8List bytes;
 
@@ -183,6 +187,9 @@ class ReportExportService {
         bytes = await const PencegahanEktoparasitReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
       } else if (useBedahBangkaiTemplate) {
         bytes = await const BedahBangkaiReportTemplateService().buildPdf(data: data, exportedBy: exportedBy);
+      } else if (useProduksiSemenBekuTemplate) {
+        bytes = await const ProduksiDistribusiSemenBekuReportTemplateService()
+            .buildPdf(data: data, exportedBy: exportedBy);
       } else {
         bytes = await _buildPdf(data: data, exportedBy: exportedBy, orientation: orientation);
       }
@@ -224,6 +231,9 @@ class ReportExportService {
       bytes = await const PencegahanEktoparasitReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
     } else if (useBedahBangkaiTemplate) {
       bytes = await const BedahBangkaiReportTemplateService().buildDocx(data: data, exportedBy: exportedBy);
+    } else if (useProduksiSemenBekuTemplate) {
+      bytes = await const ProduksiDistribusiSemenBekuReportTemplateService()
+          .buildDocx(data: data, exportedBy: exportedBy);
     } else {
       bytes = _buildDocx(data: data, exportedBy: exportedBy, orientation: orientation);
     }

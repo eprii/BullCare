@@ -19,7 +19,6 @@ import '../bulls/bull_list_page.dart';
 import 'activity_detail_page.dart';
 import 'activity_form_page.dart';
 import 'activity_type_page.dart';
-import 'produksi_distribusi_semen_beku_page.dart';
 
 class ActivityListData {
   const ActivityListData({required this.records, required this.bulls});
@@ -217,17 +216,6 @@ class _ActivityListPageState extends State<ActivityListPage> {
           return AppPageContainer(
             child: Column(
               children: <Widget>[
-                _ProductionDistributionCard(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            ProduksiDistribusiSemenBekuPage(user: widget.user),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 18),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -283,6 +271,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
       ),
       floatingActionButton: widget.user.isPetugas
           ? FloatingActionButton(
+              heroTag: null,
               onPressed: _add,
               tooltip: 'Tambah Aktivitas',
               child: const Icon(Icons.add_rounded, size: 30),
@@ -292,68 +281,6 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 }
 
-
-class _ProductionDistributionCard extends StatelessWidget {
-  const _ProductionDistributionCard({this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.divider),
-      ),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.primarySoft,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.science_outlined,
-              color: AppTheme.primary,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'Produksi & Distribusi Semen Beku',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Rekap produksi dan distribusi semen beku BIB',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-      ),
-    );
-  }
-}
 
 class _ActivityTimeline extends StatelessWidget {
   const _ActivityTimeline({
@@ -375,10 +302,14 @@ class _ActivityTimeline extends StatelessWidget {
     final Map<DateTime, List<ActivityRecord>> groups =
         <DateTime, List<ActivityRecord>>{};
     for (final ActivityRecord record in records) {
+      final DateTime sourceDate =
+          record.collectionName == 'produksi_distribusi_semen_beku'
+              ? record.updated_at
+              : record.tanggal;
       final DateTime key = DateTime(
-        record.tanggal.year,
-        record.tanggal.month,
-        record.tanggal.day,
+        sourceDate.year,
+        sourceDate.month,
+        sourceDate.day,
       );
       groups.putIfAbsent(key, () => <ActivityRecord>[]).add(record);
     }
@@ -409,9 +340,13 @@ class _ActivityTimeline extends StatelessWidget {
               ),
               ...dailyRecords.map((record) {
                 final BullModel? bull = bulls[record.bull_id];
+                final String ownerLabel =
+                    record.collectionName == 'produksi_distribusi_semen_beku'
+                        ? _productionOwnerLabel(record)
+                        : bull?.nama ?? 'Bull tidak ditemukan';
                 return ActivityTile(
                   record: record,
-                  bullName: bull?.nama ?? 'Bull tidak ditemukan',
+                  bullName: ownerLabel,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -422,7 +357,9 @@ class _ActivityTimeline extends StatelessWidget {
                       ),
                     );
                   },
-                  trailing: canEdit
+                  trailing: canEdit &&
+                          record.collectionName !=
+                              'produksi_distribusi_semen_beku'
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
@@ -453,6 +390,16 @@ class _ActivityTimeline extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _productionOwnerLabel(ActivityRecord record) {
+    final String kategori = record.data['kategori']?.toString().trim() ?? '';
+    final String bangsa = record.data['bangsa']?.toString().trim() ?? '';
+    final List<String> parts = <String>[
+      if (kategori.isNotEmpty) kategori,
+      if (bangsa.isNotEmpty) bangsa,
+    ];
+    return parts.isEmpty ? 'Produksi semen beku' : parts.join(' • ');
   }
 
   String _dateHeading(DateTime date) {

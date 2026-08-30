@@ -15,6 +15,7 @@ import 'pengambilan_sample_service.dart';
 import 'pengobatan_service.dart';
 import 'pengukuran_service.dart';
 import 'penimbangan_service.dart';
+import 'produksi_distribusi_semen_beku_service.dart';
 import 'sanitasi_service.dart';
 
 class ActivityServiceRegistry {
@@ -36,6 +37,7 @@ class ActivityServiceRegistry {
     'penampungan_semen': PenampunganSemenService(),
     'pengambilan_sample': PengambilanSampleService(),
     'bio_security': BioSecurityService(),
+    'produksi_distribusi_semen_beku': ProduksiDistribusiSemenBekuService(),
   };
 
   static BaseActivityService serviceFor(String collectionName) {
@@ -88,7 +90,7 @@ class ActivityServiceRegistry {
         groups.expand((items) => items).toList();
 
     records.sort(
-      (a, b) => b.tanggal.compareTo(a.tanggal),
+      (a, b) => _sortDate(b).compareTo(_sortDate(a)),
     );
 
     return records;
@@ -108,7 +110,7 @@ class ActivityServiceRegistry {
         groups.expand((items) => items).toList();
 
     records.sort(
-      (a, b) => b.tanggal.compareTo(a.tanggal),
+      (a, b) => _sortDate(b).compareTo(_sortDate(a)),
     );
 
     return records;
@@ -130,9 +132,15 @@ class ActivityServiceRegistry {
         groups.expand((items) => items).toList();
 
     records.sort(
-      (a, b) => b.tanggal.compareTo(a.tanggal),
+      (a, b) => _sortDate(b).compareTo(_sortDate(a)),
     );
 
     return records;
   }
+  static DateTime _sortDate(ActivityRecord record) {
+    return record.collectionName == 'produksi_distribusi_semen_beku'
+        ? record.updated_at
+        : record.tanggal;
+  }
+
 }

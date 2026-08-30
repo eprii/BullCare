@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/activity_record.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_date_utils.dart';
+import '../utils/bull_sni_status.dart';
 
 class ActivityTile extends StatelessWidget {
   const ActivityTile({
@@ -76,7 +77,9 @@ class ActivityTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '$bullName • ${record.summary}',
+                      record.collectionName == 'produksi_distribusi_semen_beku'
+                          ? _productionSummary(record)
+                          : '$bullName • ${record.summary}',
                       maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -85,7 +88,7 @@ class ActivityTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      AppDateUtils.formatDateTime(record.tanggal),
+                      _dateLabel(record),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: AppTheme.primary,
                             fontWeight: FontWeight.w800,
@@ -110,6 +113,51 @@ class ActivityTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _productionSummary(ActivityRecord record) {
+    final String category = record.data['kategori']?.toString().trim() ?? '';
+    final String breed = record.data['bangsa']?.toString().trim() ?? '';
+    final List<String> parts = <String>[
+      if (category.isNotEmpty) category,
+      if (breed.isNotEmpty) breed,
+    ];
+    if (category.toLowerCase() == 'sexing') {
+      final String status =
+          BullSniStatus.normalize(record.data['status_sni']?.toString());
+      if (status == BullSniStatus.bersertifikasi) {
+        parts.add('SNI');
+      } else if (status == BullSniStatus.belumBersertifikasi) {
+        parts.add('NON SNI');
+      } else {
+        parts.add('Belum terklasifikasi');
+      }
+    }
+    return parts.isEmpty ? 'Produksi semen beku' : parts.join(' • ');
+  }
+
+  String _dateLabel(ActivityRecord record) {
+    if (record.collectionName != 'produksi_distribusi_semen_beku') {
+      return AppDateUtils.formatDateTime(record.tanggal);
+    }
+    final int month = _asInt(record.data['bulan']);
+    final int year = _asInt(record.data['tahun']);
+    return 'Periode ${_monthName(month)} $year • diperbarui ${AppDateUtils.formatDateTime(record.updated_at)}';
+  }
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String _monthName(int month) {
+    const List<String> months = <String>[
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    ];
+    if (month < 1 || month > 12) return 'Bulan';
+    return months[month - 1];
   }
 
   Color _accentFor(String collection) {
