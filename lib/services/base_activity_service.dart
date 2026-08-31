@@ -1,6 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
 import '../models/activity_record.dart';
 
 class BaseActivityService {
@@ -19,14 +17,6 @@ class BaseActivityService {
     required DateTime tanggal,
     required Map<String, dynamic> values,
   }) async {
-    print('========== DEBUG ACTIVITY ==========');
-    print('Collection  : $collectionName');
-    print('Bull ID     : $bullId');
-    print('Petugas UID : $petugasUid');
-    print('Auth UID    : ${FirebaseAuth.instance.currentUser?.uid}');
-    print('Values      : $values');
-    print('====================================');
-
     final DateTime now = DateTime.now();
 
     final DocumentReference<Map<String, dynamic>> ref =

@@ -30,7 +30,7 @@ import 'produksi_distribusi_semen_beku_report_template_service.dart';
 import 'sanitasi_report_template_service.dart';
 import 'pengambilan_sample_report_template_service.dart';
 
-enum ReportFileFormat { pdf, word }
+enum ReportFileFormat { pdf, word, excel }
 enum ReportPageOrientation { portrait, landscape }
 
 class ReportExportService {
@@ -159,6 +159,25 @@ class ReportExportService {
     );
 
     Uint8List bytes;
+
+    if (format == ReportFileFormat.excel) {
+      if (!useProduksiSemenBekuTemplate) {
+        throw StateError(
+          'Format Excel hanya tersedia untuk laporan Produksi & Distribusi Semen Beku.',
+        );
+      }
+      bytes = await const ProduksiDistribusiSemenBekuReportTemplateService()
+          .buildXlsx(data: data, exportedBy: exportedBy);
+      await _saveFile(
+        name: safeName,
+        bytes: bytes,
+        fileExtension: 'xlsx',
+        mimeType: MimeType.microsoftExcel,
+        androidMimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      return;
+    }
 
     if (format == ReportFileFormat.pdf) {
       if (useSanitasiTemplate) {

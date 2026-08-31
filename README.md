@@ -77,16 +77,19 @@ Collection utama saat ini:
 - `pengobatan`
 - `pemberian_obat_cacing`
 - `pencegahan_ektoparasit`
+- `bedah_bangkai`
 - `pemotongan_bulu`
 - `pemotongan_kuku`
 - `penampungan_semen`
+- `produksi_distribusi_semen_beku`
+- `bio_security`
 - `pengambilan_sample`
 
 Detail field aktual tersedia pada `docs/FIRESTORE_SCHEMA.md`.
 
 ## Aktivitas saat ini
 
-`ActivityCatalog`, `ActivityServiceRegistry`, constants, sumber Laporan, dan Firestore Rules telah disinkronkan untuk 12 jenis aktivitas:
+`ActivityCatalog`, `ActivityServiceRegistry`, constants, sumber Laporan, dan Firestore Rules telah disinkronkan untuk 15 jenis aktivitas:
 
 1. Pemberian Pakan
 2. Sanitasi
@@ -96,10 +99,13 @@ Detail field aktual tersedia pada `docs/FIRESTORE_SCHEMA.md`.
 6. Pengobatan
 7. Pemberian Obat Cacing
 8. Pencegahan Ektoparasit
-9. Pemotongan Bulu
-10. Pemotongan Kuku
-11. Penampungan Semen
-12. Pengambilan Sample
+9. Bedah Bangkai
+10. Pemotongan Bulu
+11. Pemotongan Kuku
+12. Penampungan Semen
+13. Produksi & Distribusi Semen Beku
+14. Bio Security
+15. Pengambilan Sample
 
 > Catatan riwayat: pada pembaruan lama Pengambilan Sampel pernah dihapus. Pada source terkini fitur tersebut telah ditambahkan kembali dan terintegrasi ke registry, Firestore Rules, histori, serta laporan.
 
@@ -134,7 +140,7 @@ Default model adalah pukul 08:00.
 
 ## Laporan dan export
 
-Halaman Laporan dapat memilih sumber aktivitas, periode, nama file, format, dan orientasi sesuai implementasi yang tersedia.
+Halaman Laporan dapat memilih sumber aktivitas, periode, nama file, format, dan orientasi sesuai implementasi yang tersedia. Khusus sumber **Produksi & Distribusi Semen Beku**, pemilihan laporan menggunakan **bulan dan tahun** (bukan rentang tanggal) dan menyediakan export tambahan **Excel (.xlsx)** yang mengikuti template kantor serta tetap dapat diedit.
 
 Export mendukung:
 
@@ -147,6 +153,9 @@ Pengembangan lanjutan juga mencakup:
 
 - laporan Pengambilan Sample,
 - laporan Pencegahan Ektoparasit berdasarkan referensi formulir SOP-6.3 k,
+- laporan Bedah Bangkai,
+- laporan Produksi & Distribusi Semen Beku,
+- Bio Security sebagai sumber laporan PDF/DOCX melalui generator laporan umum karena belum terdapat template SOP Bio Security pada `assets/templates/`,
 - kompatibilitas laporan Penampungan Semen schema baru dan histori lama.
 
 ### Android
@@ -201,4 +210,5 @@ Riwayat perubahan teknis berada pada folder `docs/`. Dokumentasi lama tetap dipe
 
 - `docs/FIRESTORE_SCHEMA.md`
 - `docs/PROJECT_ANALYSIS.md`
-- `docs/PERBAIKAN_V9_PENGEMBANGAN_LANJUTAN.md`
+- `docs/PERBAIKAN_V10_SINKRONISASI_15_AKTIVITAS.md`
+- `docs/PERBAIKAN_V9_PENGEMBANGAN_LANJUTAN.md` (riwayat tahap sebelumnya)

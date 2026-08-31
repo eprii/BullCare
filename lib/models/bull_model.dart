@@ -7,7 +7,6 @@ class BullModel {
   final String kode_bull;
   final String nama;
   final String bangsa;
-  final String kategori;
   final String nomor_kandang;
   final String warna_straw;
   final String umur;
@@ -25,7 +24,6 @@ class BullModel {
     required this.kode_bull,
     required this.nama,
     required this.bangsa,
-    this.kategori = '',
     required this.nomor_kandang,
     required this.warna_straw,
     this.umur = '',
@@ -45,7 +43,6 @@ class BullModel {
       kode_bull: map['kode_bull']?.toString() ?? '',
       nama: map['nama']?.toString() ?? '',
       bangsa: map['bangsa']?.toString() ?? '',
-      kategori: map['kategori']?.toString() ?? '',
       nomor_kandang: map['nomor_kandang']?.toString() ?? '',
       warna_straw: map['warna_straw']?.toString() ?? '',
       umur: map['umur']?.toString() ?? '',
@@ -65,7 +62,6 @@ class BullModel {
       'kode_bull': kode_bull,
       'nama': nama,
       'bangsa': bangsa,
-      'kategori': kategori,
       'nomor_kandang': nomor_kandang,
       'warna_straw': warna_straw,
       'umur': umur,
@@ -85,7 +81,6 @@ class BullModel {
     String? kode_bull,
     String? nama,
     String? bangsa,
-    String? kategori,
     String? nomor_kandang,
     String? warna_straw,
     String? umur,
@@ -103,7 +98,6 @@ class BullModel {
       kode_bull: kode_bull ?? this.kode_bull,
       nama: nama ?? this.nama,
       bangsa: bangsa ?? this.bangsa,
-      kategori: kategori ?? this.kategori,
       nomor_kandang: nomor_kandang ?? this.nomor_kandang,
       warna_straw: warna_straw ?? this.warna_straw,
       umur: umur ?? this.umur,

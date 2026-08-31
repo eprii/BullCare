@@ -59,6 +59,7 @@ flutter:
     - assets/templates/form_penampungan_semen_sop_7_5_1f_page_1.png
     # ===== LOGO DISBUNNAK =====
     - assets/templates/logo_disbunnak.jpeg
+    - assets/templates/form_produksi_distribusi_semen_beku.xlsx
     - assets/report/report_pdf_icon.png
     - assets/report/report_word_icon.png
     - assets/bulls/

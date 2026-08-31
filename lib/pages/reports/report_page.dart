@@ -10,6 +10,7 @@ import '../../widgets/app_page_container.dart';
 
 const String _pdfReportIconAsset = 'assets/report/report_pdf_icon.png';
 const String _wordReportIconAsset = 'assets/report/report_word_icon.png';
+const Color _excelReportColor = Color(0xFF217346);
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key, required this.user});
@@ -26,6 +27,8 @@ class _ReportPageState extends State<ReportPage> {
 
   String? _selectedSourceId;
   late DateTimeRange _period;
+  late int _selectedMonth;
+  late int _selectedYear;
   ReportFileFormat _format = ReportFileFormat.pdf;
   ReportPageOrientation _orientation = ReportPageOrientation.portrait;
   bool _exporting = false;
@@ -116,6 +119,12 @@ class _ReportPageState extends State<ReportPage> {
       label: 'Produksi & Distribusi Semen Beku',
       icon: Icons.inventory_2_outlined,
     ),
+    _ReportSourceOption(
+      id: 'bio_security',
+      collectionName: 'bio_security',
+      label: 'Bio Security',
+      icon: Icons.health_and_safety_outlined,
+    ),
   ];
 
   _ReportSourceOption? get _selectedSource {
@@ -135,6 +144,8 @@ class _ReportPageState extends State<ReportPage> {
       start: DateTime(now.year, now.month, 1),
       end: DateTime(now.year, now.month + 1, 0),
     );
+    _selectedMonth = now.month;
+    _selectedYear = now.year;
     _fileNameController.text =
         'Laporan BullCare ${_monthName(now.month)} ${now.year}';
   }
@@ -250,7 +261,13 @@ class _ReportPageState extends State<ReportPage> {
       },
     );
     if (result == null || !mounted) return;
-    setState(() => _selectedSourceId = result);
+    setState(() {
+      _selectedSourceId = result;
+      if (result != 'produksi_distribusi_semen_beku' &&
+          _format == ReportFileFormat.excel) {
+        _format = ReportFileFormat.pdf;
+      }
+    });
   }
 
   Future<void> _chooseOrientation(BuildContext anchorContext) async {
@@ -353,6 +370,179 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
+  Future<void> _chooseMonth(BuildContext anchorContext) async {
+    final int? result = await _showBullCareDropdown<int>(
+      anchorContext: anchorContext,
+      itemBuilder: (double menuWidth) {
+        return List<PopupMenuEntry<int>>.generate(12, (int index) {
+          final int month = index + 1;
+          final bool selected = month == _selectedMonth;
+          return PopupMenuItem<int>(
+            value: month,
+            height: 46,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: SizedBox(
+              width: menuWidth - 28,
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      _monthName(month),
+                      style: TextStyle(
+                        color: selected
+                            ? AppTheme.primaryDark
+                            : AppTheme.textPrimary,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (selected)
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 19,
+                      color: AppTheme.primary,
+                    ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+    if (result == null || !mounted) return;
+    setState(() => _selectedMonth = result);
+  }
+
+  Future<void> _chooseYear(BuildContext anchorContext) async {
+    final DateTime now = DateTime.now();
+    final List<int> years = List<int>.generate(
+      12,
+      (int index) => now.year + 1 - index,
+    );
+    final int? result = await _showBullCareDropdown<int>(
+      anchorContext: anchorContext,
+      itemBuilder: (double menuWidth) {
+        return years.map((int year) {
+          final bool selected = year == _selectedYear;
+          return PopupMenuItem<int>(
+            value: year,
+            height: 46,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: SizedBox(
+              width: menuWidth - 28,
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      '$year',
+                      style: TextStyle(
+                        color: selected
+                            ? AppTheme.primaryDark
+                            : AppTheme.textPrimary,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (selected)
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 19,
+                      color: AppTheme.primary,
+                    ),
+                ],
+              ),
+            ),
+          );
+        }).toList(growable: false);
+      },
+    );
+    if (result == null || !mounted) return;
+    setState(() => _selectedYear = result);
+  }
+
+  Widget _buildPeriodSelector({required bool productionSelected}) {
+    if (!productionSelected) {
+      return _SectionCard(
+        title: 'Pilih Periode',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _choosePeriod,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceMuted,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: <Widget>[
+                const Icon(Icons.calendar_month_outlined),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${AppDateUtils.formatDate(_period.start)} - ${AppDateUtils.formatDate(_period.end)}',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const Icon(Icons.keyboard_arrow_down_rounded),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _SectionCard(
+      title: 'Pilih Bulan & Tahun',
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final Widget monthField = Builder(
+            builder: (BuildContext dropdownContext) => _CustomSelectorField(
+              label: 'Bulan',
+              value: _monthName(_selectedMonth),
+              placeholder: 'Pilih bulan',
+              leadingIcon: Icons.calendar_month_outlined,
+              onTap: () => _chooseMonth(dropdownContext),
+            ),
+          );
+          final Widget yearField = Builder(
+            builder: (BuildContext dropdownContext) => _CustomSelectorField(
+              label: 'Tahun',
+              value: '$_selectedYear',
+              placeholder: 'Pilih tahun',
+              leadingIcon: Icons.event_outlined,
+              onTap: () => _chooseYear(dropdownContext),
+            ),
+          );
+
+          if (constraints.maxWidth < 480) {
+            return Column(
+              children: <Widget>[
+                monthField,
+                const SizedBox(height: 10),
+                yearField,
+              ],
+            );
+          }
+          return Row(
+            children: <Widget>[
+              Expanded(child: monthField),
+              const SizedBox(width: 10),
+              Expanded(child: yearField),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  String _formatLabel(ReportFileFormat format) {
+    if (format == ReportFileFormat.pdf) return 'PDF';
+    if (format == ReportFileFormat.word) return 'Word';
+    return 'Excel';
+  }
+
   Future<void> _choosePeriod() async {
     final DateTime now = DateTime.now();
     final DateTimeRange? result = await showDateRangePicker(
@@ -381,9 +571,18 @@ class _ReportPageState extends State<ReportPage> {
       return;
     }
 
+    final bool productionSelected =
+        source.collectionName == 'produksi_distribusi_semen_beku';
+    final DateTime reportStart = productionSelected
+        ? DateTime(_selectedYear, _selectedMonth, 1)
+        : _period.start;
+    final DateTime reportEnd = productionSelected
+        ? DateTime(_selectedYear, _selectedMonth + 1, 0)
+        : _period.end;
+
     final bool spansMultipleMonths =
-        _period.start.year != _period.end.year ||
-        _period.start.month != _period.end.month;
+        reportStart.year != reportEnd.year ||
+        reportStart.month != reportEnd.month;
 
     if (source.collectionName == 'sanitasi' && spansMultipleMonths) {
       AppFeedback.showError(
@@ -402,7 +601,7 @@ class _ReportPageState extends State<ReportPage> {
     }
 
     if (source.collectionName == 'penimbangan' &&
-        _period.start.year != _period.end.year) {
+        reportStart.year != reportEnd.year) {
       AppFeedback.showError(
         context,
         'Formulir penimbangan pejantan SOP-6.3b dibuat per tahun. Pilih periode dalam tahun yang sama.',
@@ -415,8 +614,8 @@ class _ReportPageState extends State<ReportPage> {
     try {
       final ReportExportData data = await _service.loadData(
         collections: <String>{source.collectionName},
-        periodStart: _period.start,
-        periodEnd: _period.end,
+        periodStart: reportStart,
+        periodEnd: reportEnd,
         sourceLabel: source.label,
       );
 
@@ -425,7 +624,9 @@ class _ReportPageState extends State<ReportPage> {
       if (data.records.isEmpty) {
         AppFeedback.showError(
           context,
-          'Tidak ada data ${source.label.toLowerCase()} pada periode yang dipilih.',
+          productionSelected
+              ? 'Tidak ada data ${source.label.toLowerCase()} pada ${_monthName(_selectedMonth)} $_selectedYear.'
+              : 'Tidak ada data ${source.label.toLowerCase()} pada periode yang dipilih.',
         );
         return;
       }
@@ -442,7 +643,7 @@ class _ReportPageState extends State<ReportPage> {
 
       AppFeedback.showSuccess(
         context,
-        'Berhasil mengekspor ${data.records.length} data ${source.label} ke ${_format == ReportFileFormat.pdf ? 'PDF' : 'Word'}.',
+        'Berhasil mengekspor ${data.records.length} data ${source.label} ke ${_formatLabel(_format)}.',
       );
     } catch (error) {
       if (!mounted) return;
@@ -456,9 +657,13 @@ class _ReportPageState extends State<ReportPage> {
   Widget build(BuildContext context) {
     final Color accent = _format == ReportFileFormat.pdf
         ? AppTheme.primary
-        : const Color(0xFF2D6BD3);
+        : _format == ReportFileFormat.word
+            ? const Color(0xFF2D6BD3)
+            : _excelReportColor;
 
     final _ReportSourceOption? selectedSource = _selectedSource;
+    final bool productionSelected =
+        selectedSource?.collectionName == 'produksi_distribusi_semen_beku';
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -469,6 +674,7 @@ class _ReportPageState extends State<ReportPage> {
           children: <Widget>[
             _FormatHero(
               format: _format,
+              allowExcel: productionSelected,
               onFormatChanged: (format) => setState(() => _format = format),
             ),
             const SizedBox(height: 14),
@@ -522,7 +728,9 @@ class _ReportPageState extends State<ReportPage> {
                                                       ? 'Laporan Pencegahan Ektoparasit menggunakan format FORMULIR PENCEGAHAN EKTOPARASIT (SOP-6.3 k) dengan kolom Nama Bull, Bangsa, Bahan, Alat, Tindakan, dan Keterangan. Data dikelompokkan per tanggal pelaksanaan.'
                                                       : selectedSource.collectionName == 'bedah_bangkai'
                                                           ? 'Laporan Bedah Bangkai mengikuti format formulir kantor: Jenis Bull, Bangsa, Tanggal Mati, Peralatan, Sampel/Organ, Tanggal Pengiriman Laboratorium, Tanggal Jawaban, Hasil Pemeriksaan, dan Keterangan. Setiap baris Organ | Hasil akan dipisahkan menjadi baris tabel.'
-                                                          : 'Laporan akan mengambil data ${selectedSource.label} sesuai periode yang dipilih.',
+                                                          : selectedSource.collectionName == 'produksi_distribusi_semen_beku'
+                                                              ? 'Laporan Produksi & Distribusi Semen Beku dibuat berdasarkan satu bulan dan satu tahun. Selain PDF dan Word, tersedia Excel (.xlsx) yang mengikuti format contoh kantor dan tetap dapat diedit setelah diunduh.'
+                                                              : 'Laporan akan mengambil data ${selectedSource.label} sesuai periode yang dipilih.',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppTheme.primary,
                                 fontWeight: FontWeight.w600,
@@ -537,33 +745,7 @@ class _ReportPageState extends State<ReportPage> {
               ),
             ),
             const SizedBox(height: 14),
-            _SectionCard(
-              title: 'Pilih Periode',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: _choosePeriod,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceMuted,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      const Icon(Icons.calendar_month_outlined),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '${AppDateUtils.formatDate(_period.start)} - ${AppDateUtils.formatDate(_period.end)}',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      const Icon(Icons.keyboard_arrow_down_rounded),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _buildPeriodSelector(productionSelected: productionSelected),
             const SizedBox(height: 14),
             _SectionCard(
               title: 'Pengaturan File',
@@ -577,22 +759,25 @@ class _ReportPageState extends State<ReportPage> {
                       prefixIcon: Icon(Icons.insert_drive_file_outlined),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Builder(
-                    builder: (BuildContext dropdownContext) {
-                      return _CustomSelectorField(
-                        label: 'Orientasi',
-                        value: _orientation == ReportPageOrientation.portrait
-                            ? 'Potret'
-                            : 'Lanskap',
-                        placeholder: 'Pilih orientasi laporan',
-                        leadingIcon: _orientation == ReportPageOrientation.portrait
-                            ? Icons.stay_current_portrait_rounded
-                            : Icons.stay_current_landscape_rounded,
-                        onTap: () => _chooseOrientation(dropdownContext),
-                      );
-                    },
-                  ),
+                  if (_format != ReportFileFormat.excel) ...<Widget>[
+                    const SizedBox(height: 12),
+                    Builder(
+                      builder: (BuildContext dropdownContext) {
+                        return _CustomSelectorField(
+                          label: 'Orientasi',
+                          value: _orientation == ReportPageOrientation.portrait
+                              ? 'Potret'
+                              : 'Lanskap',
+                          placeholder: 'Pilih orientasi laporan',
+                          leadingIcon:
+                              _orientation == ReportPageOrientation.portrait
+                                  ? Icons.stay_current_portrait_rounded
+                                  : Icons.stay_current_landscape_rounded,
+                          onTap: () => _chooseOrientation(dropdownContext),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -616,19 +801,21 @@ class _ReportPageState extends State<ReportPage> {
                           color: Colors.white,
                         ),
                       )
-                    : Image.asset(
-                        _format == ReportFileFormat.pdf
-                            ? _pdfReportIconAsset
-                            : _wordReportIconAsset,
-                        width: 26,
-                        height: 26,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                      ),
+                    : _format == ReportFileFormat.excel
+                        ? const Icon(Icons.table_chart_outlined, size: 25)
+                        : Image.asset(
+                            _format == ReportFileFormat.pdf
+                                ? _pdfReportIconAsset
+                                : _wordReportIconAsset,
+                            width: 26,
+                            height: 26,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                          ),
                 label: Text(
                   _exporting
                       ? 'Menyiapkan laporan...'
-                      : 'Export ke ${_format == ReportFileFormat.pdf ? 'PDF' : 'Word'}',
+                      : 'Export ke ${_formatLabel(_format)}',
                 ),
               ),
             ),
@@ -674,9 +861,14 @@ class _ReportSourceOption {
 }
 
 class _FormatHero extends StatelessWidget {
-  const _FormatHero({required this.format, required this.onFormatChanged});
+  const _FormatHero({
+    required this.format,
+    required this.allowExcel,
+    required this.onFormatChanged,
+  });
 
   final ReportFileFormat format;
+  final bool allowExcel;
   final ValueChanged<ReportFileFormat> onFormatChanged;
 
   @override
@@ -706,13 +898,19 @@ class _FormatHero extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: AppTheme.divider),
             ),
-            child: Image.asset(
-              format == ReportFileFormat.pdf
-                  ? _pdfReportIconAsset
-                  : _wordReportIconAsset,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-            ),
+            child: format == ReportFileFormat.excel
+                ? const Icon(
+                    Icons.table_chart_outlined,
+                    size: 62,
+                    color: _excelReportColor,
+                  )
+                : Image.asset(
+                    format == ReportFileFormat.pdf
+                        ? _pdfReportIconAsset
+                        : _wordReportIconAsset,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -721,7 +919,9 @@ class _FormatHero extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Pilih aktivitas dan periode, lalu simpan laporan dalam format PDF atau Word.',
+            allowExcel
+                ? 'Pilih aktivitas dan bulan/tahun, lalu simpan laporan dalam format PDF, Word, atau Excel.'
+                : 'Pilih aktivitas dan periode, lalu simpan laporan dalam format PDF atau Word.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondary,
@@ -751,6 +951,16 @@ class _FormatHero extends StatelessWidget {
               ),
             ],
           ),
+          if (allowExcel) ...<Widget>[
+            const SizedBox(height: 10),
+            _FormatChoice(
+              label: 'Excel (.xlsx)',
+              icon: Icons.table_chart_outlined,
+              selected: format == ReportFileFormat.excel,
+              color: _excelReportColor,
+              onTap: () => onFormatChanged(ReportFileFormat.excel),
+            ),
+          ],
         ],
       ),
     );
@@ -760,14 +970,16 @@ class _FormatHero extends StatelessWidget {
 class _FormatChoice extends StatelessWidget {
   const _FormatChoice({
     required this.label,
-    required this.assetPath,
+    this.assetPath,
+    this.icon,
     required this.selected,
     required this.color,
     required this.onTap,
-  });
+  }) : assert(assetPath != null || icon != null);
 
   final String label;
-  final String assetPath;
+  final String? assetPath;
+  final IconData? icon;
   final bool selected;
   final Color color;
   final VoidCallback onTap;
@@ -791,13 +1003,16 @@ class _FormatChoice extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Image.asset(
-              assetPath,
-              width: 30,
-              height: 30,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-            ),
+            if (assetPath != null)
+              Image.asset(
+                assetPath!,
+                width: 30,
+                height: 30,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              )
+            else
+              Icon(icon, size: 29, color: selected ? color : AppTheme.textSecondary),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
@@ -950,7 +1165,12 @@ class _SafetyInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool pdf = format == ReportFileFormat.pdf;
-    final Color color = pdf ? AppTheme.primary : const Color(0xFF2D6BD3);
+    final bool excel = format == ReportFileFormat.excel;
+    final Color color = pdf
+        ? AppTheme.primary
+        : excel
+            ? _excelReportColor
+            : const Color(0xFF2D6BD3);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -968,7 +1188,9 @@ class _SafetyInfo extends StatelessWidget {
             child: Text(
               pdf
                   ? 'Laporan PDF dibuat langsung dari data BullCare dan disimpan ke perangkat Anda.'
-                  : 'File Word (.docx) dapat dibuka dan diedit menggunakan Microsoft Word atau aplikasi sejenis.',
+                  : excel
+                      ? 'File Excel (.xlsx) menggunakan format laporan Produksi & Distribusi Semen Beku dan tetap dapat diedit menggunakan Microsoft Excel atau aplikasi spreadsheet sejenis.'
+                      : 'File Word (.docx) dapat dibuka dan diedit menggunakan Microsoft Word atau aplikasi sejenis.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: color,
                     fontWeight: FontWeight.w600,

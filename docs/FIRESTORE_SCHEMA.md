@@ -133,6 +133,17 @@ Catatan implementasi reminder saat ini:
 
 Aktivitas ini sudah terdaftar pada `ActivityCatalog`, `ActivityServiceRegistry`, Firestore Rules, dan sumber Laporan.
 
+## bedah_bangkai
+
+- `tanggal_mati` timestamp
+- `peralatan` string
+- `pemeriksaan_organ` string
+- `tanggal_pengiriman_laboratorium` timestamp/null
+- `tanggal_jawaban` timestamp/null
+- `keterangan` string
+
+`pemeriksaan_organ` menyimpan pasangan Organ dan Hasil Pemeriksaan sesuai format input yang digunakan source.
+
 ## pemotongan_bulu
 
 - `dipotong` boolean
@@ -157,6 +168,45 @@ Catatan kompatibilitas histori:
 
 Service laporan Penampungan Semen tetap dapat membaca record historis yang memakai field lama seperti `av`, `vaselin`, `suhu_av`, dan `volume_semen`. Dukungan ini hanya untuk kompatibilitas laporan histori dan tidak mengubah schema input terbaru.
 
+## produksi_distribusi_semen_beku
+
+Collection ini menggunakan record bulanan dan tetap berada pada root Firestore. Field khusus yang digunakan source saat ini:
+
+- `record_type` string (`monthly`)
+- `kategori` string
+- `bangsa` string
+- `status_sni` string
+- `jumlah_pejantan` number/integer
+- `tahun` number/integer
+- `bulan` number/integer
+- `stock_tahun` number/integer/null
+- `stock_awal` number/integer/null (alias kompatibilitas data/laporan lama)
+- `produksi_minggu_i` number/integer/null
+- `produksi_minggu_ii` number/integer/null
+- `produksi_minggu_iii` number/integer/null
+- `produksi_minggu_iv` number/integer/null
+- `produksi_minggu_v` number/integer/null
+- `jumlah_produksi` number/integer/null
+- `afkir` number/integer/null
+- `distribusi_komandan` number/integer/null
+- `distribusi_non_sikomandan` number/integer/null
+- `jumlah_distribusi` number/integer/null
+- `stock_akhir` number/integer/null
+
+Catatan implementasi:
+
+- `tanggal` digunakan sebagai periode produksi (tanggal 1 pada bulan/tahun terkait).
+- `created_at` dan `updated_at` menyimpan waktu pencatatan/audit sebenarnya.
+- `bull_id` tetap tersedia untuk kompatibilitas struktur aktivitas tetapi bernilai string kosong karena data ini bersifat agregat produksi bulanan, bukan aktivitas satu bull tertentu.
+
+## bio_security
+
+- `bahan` string
+- `alat` string
+- `keterangan` string
+
+Bio Security sudah terdaftar pada katalog, registry, Firestore Rules, dan sumber Laporan. Karena belum ada template SOP Bio Security pada `assets/templates/`, export memakai generator laporan umum PDF/DOCX yang sudah tersedia.
+
 ## pengambilan_sample
 
 - `darah` boolean
@@ -178,10 +228,13 @@ Aktivitas ini sudah terdaftar pada `ActivityCatalog`, `ActivityServiceRegistry`,
 6. `pengobatan`
 7. `pemberian_obat_cacing`
 8. `pencegahan_ektoparasit`
-9. `pemotongan_bulu`
-10. `pemotongan_kuku`
-11. `penampungan_semen`
-12. `pengambilan_sample`
+9. `bedah_bangkai`
+10. `pemotongan_bulu`
+11. `pemotongan_kuku`
+12. `penampungan_semen`
+13. `produksi_distribusi_semen_beku`
+14. `bio_security`
+15. `pengambilan_sample`
 
 ## Firestore Rules
 
@@ -189,7 +242,7 @@ Kondisi rules saat ini:
 
 - Semua data Bull dan aktivitas dapat dibaca oleh user yang sudah login.
 - Create/update/delete Bull hanya untuk role `petugas`.
-- Create/update/delete seluruh 12 collection aktivitas hanya untuk role `petugas`.
+- Create/update/delete seluruh 15 collection aktivitas hanya untuk role `petugas`.
 - Role `supervisor` bersifat read-only terhadap Bull dan aktivitas.
 
 Perubahan schema atau permission berikutnya harus mengikuti implementasi source aktual dan tidak boleh mengubah konsep role tanpa kebutuhan eksplisit.

@@ -59,7 +59,7 @@ Sistem aktivitas menggunakan `ActivityCatalog`, `ActivityRecord`, `BaseActivityS
 
 ## Aktivitas terintegrasi
 
-Source saat ini mempunyai 12 jenis aktivitas yang konsisten antara katalog, registry, constants, sumber laporan, dan Firestore Rules:
+Source saat ini mempunyai 15 jenis aktivitas yang konsisten antara katalog, registry, constants, sumber laporan, dan Firestore Rules:
 
 1. Pemberian Pakan
 2. Sanitasi
@@ -69,12 +69,15 @@ Source saat ini mempunyai 12 jenis aktivitas yang konsisten antara katalog, regi
 6. Pengobatan
 7. Pemberian Obat Cacing
 8. Pencegahan Ektoparasit
-9. Pemotongan Bulu
-10. Pemotongan Kuku
-11. Penampungan Semen
-12. Pengambilan Sample
+9. Bedah Bangkai
+10. Pemotongan Bulu
+11. Pemotongan Kuku
+12. Penampungan Semen
+13. Produksi & Distribusi Semen Beku
+14. Bio Security
+15. Pengambilan Sample
 
-Pengambilan Sample yang pada versi lama pernah dihapus telah ditambahkan kembali pada source terkini. Pencegahan Ektoparasit juga telah menjadi aktivitas resmi di katalog aplikasi.
+Pengambilan Sample yang pada versi lama pernah dihapus telah ditambahkan kembali pada source terkini. Pencegahan Ektoparasit, Bedah Bangkai, Produksi & Distribusi Semen Beku, dan Bio Security juga telah menjadi bagian source aktual. Produksi & Distribusi Semen Beku menggunakan alur khusus berbasis data agregat bulanan, sedangkan aktivitas lain tetap mengikuti pola activity service yang sudah ada.
 
 ## Data Bull aktual
 
@@ -103,12 +106,15 @@ Siklus sanitasi menggunakan data aktivitas terakhir sebagai anchor dan jam remin
 
 ## Laporan/export aktual
 
-Fitur laporan mendukung PDF dan Word/DOCX. Template SOP pada `assets/templates/` tetap digunakan untuk laporan yang sudah mempunyai aset resmi.
+Fitur laporan secara umum mendukung PDF dan Word/DOCX. Template SOP pada `assets/templates/` tetap digunakan untuk laporan yang sudah mempunyai aset resmi. Khusus **Produksi & Distribusi Semen Beku**, laporan dipilih berdasarkan bulan+tahun dan juga mendukung **Excel (.xlsx)** editable menggunakan `assets/templates/form_produksi_distribusi_semen_beku.xlsx` sebagai acuan visual.
 
 Pengembangan lanjutan menambahkan/menyelesaikan:
 
 - integrasi laporan Pengambilan Sample,
 - laporan Pencegahan Ektoparasit berdasarkan referensi formulir SOP-6.3 k,
+- laporan Bedah Bangkai,
+- laporan Produksi & Distribusi Semen Beku,
+- Bio Security sebagai sumber Laporan; export memakai generator laporan umum karena belum ada template SOP Bio Security pada assets project,
 - penyesuaian Penampungan Semen agar field terbaru tidak dipetakan ke kolom schema lama,
 - kompatibilitas export terhadap record Penampungan Semen historis.
 
@@ -121,7 +127,7 @@ Konsep role tidak berubah:
 - `petugas`: dapat melakukan operasi perubahan data sesuai fitur.
 - `supervisor`: read-only untuk Bull dan seluruh aktivitas.
 
-Firestore Rules sekarang memiliki rule eksplisit untuk seluruh 12 root collection aktivitas, termasuk `pencegahan_ektoparasit` dan `pengambilan_sample`.
+Firestore Rules sekarang memiliki rule eksplisit untuk seluruh 15 root collection aktivitas, termasuk `pencegahan_ektoparasit`, `bedah_bangkai`, `produksi_distribusi_semen_beku`, `bio_security`, dan `pengambilan_sample`.
 
 ## Prinsip pengembangan berikutnya
 

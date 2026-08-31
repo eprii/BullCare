@@ -40,7 +40,6 @@ class _BullFormPageState extends State<BullFormPage> {
   late final TextEditingController _code;
   late final TextEditingController _name;
   late final TextEditingController _breed;
-  String _kategori = '';
   String? _selectedBreed;
   bool _creatingNewBreed = false;
   bool _loadingBreeds = true;
@@ -67,7 +66,6 @@ class _BullFormPageState extends State<BullFormPage> {
     _code = TextEditingController(text: bull?.kode_bull ?? '');
     _name = TextEditingController(text: bull?.nama ?? '');
     _breed = TextEditingController(text: bull?.bangsa ?? '');
-    _kategori = bull?.kategori ?? '';
     final String initialBreed = bull?.bangsa.trim() ?? '';
     _selectedBreed = initialBreed.isEmpty ? null : initialBreed;
     _age = TextEditingController(text: bull?.umur ?? '');
@@ -205,12 +203,8 @@ class _BullFormPageState extends State<BullFormPage> {
   }
 
   List<String> get _availableBreedOptions {
-    final String selectedCategory = _kategori.trim().toLowerCase();
-    if (selectedCategory.isEmpty) return <String>[];
-
     final Map<String, String> unique = <String, String>{};
     for (final BullModel bull in _breedSourceBulls) {
-      if (bull.kategori.trim().toLowerCase() != selectedCategory) continue;
       final String breed = bull.bangsa.trim();
       if (breed.isEmpty) continue;
       unique.putIfAbsent(breed.toLowerCase(), () => breed);
@@ -274,7 +268,7 @@ class _BullFormPageState extends State<BullFormPage> {
           padding: const EdgeInsets.only(bottom: 14),
           child: DropdownButtonFormField<String>(
             key: ValueKey<String>(
-              'breed-${_kategori.toLowerCase()}-${selectedValue ?? ''}-${options.join('|')}',
+              'breed-${selectedValue ?? ''}-${options.join('|')}',
             ),
             initialValue: selectedValue,
             isExpanded: true,
@@ -289,13 +283,11 @@ class _BullFormPageState extends State<BullFormPage> {
             decoration: InputDecoration(
               labelText: 'Bangsa',
               prefixIcon: const Icon(Icons.category_outlined),
-              helperText: _kategori.isEmpty
-                  ? 'Pilih kategori terlebih dahulu.'
-                  : _loadingBreeds
-                      ? 'Memuat daftar bangsa...'
-                      : options.isEmpty
-                          ? 'Belum ada bangsa pada kategori ini. Buat bangsa baru.'
-                          : 'Pilih bangsa yang tersedia atau buat bangsa baru.',
+              helperText: _loadingBreeds
+                  ? 'Memuat daftar bangsa...'
+                  : options.isEmpty
+                      ? 'Belum ada bangsa. Buat bangsa baru.'
+                      : 'Pilih bangsa yang tersedia atau buat bangsa baru.',
             ),
             items: <DropdownMenuItem<String>>[
               const DropdownMenuItem<String>(
@@ -326,16 +318,13 @@ class _BullFormPageState extends State<BullFormPage> {
               ),
             ],
             validator: (value) {
-              if (_kategori.trim().isEmpty) {
-                return 'Kategori Bull wajib dipilih terlebih dahulu.';
-              }
               if (_creatingNewBreed) return null;
               if (value == null || value.trim().isEmpty) {
                 return 'Bangsa wajib dipilih.';
               }
               return null;
             },
-            onChanged: _kategori.trim().isEmpty || _loadingBreeds
+            onChanged: _loadingBreeds
                 ? null
                 : (value) {
                     setState(() {
@@ -494,7 +483,6 @@ class _BullFormPageState extends State<BullFormPage> {
             kode_bull: _code.text.trim(),
             nama: _name.text.trim(),
             bangsa: _breed.text.trim(),
-            kategori: _kategori,
             umur: normalizedAge,
             nomor_kandang: _cage.text.trim(),
             warna_straw: _strawColor?.trim() ?? '',
@@ -511,7 +499,6 @@ class _BullFormPageState extends State<BullFormPage> {
           kodeBull: _code.text,
           nama: _name.text,
           bangsa: _breed.text,
-          kategori: _kategori,
           umur: normalizedAge,
           nomorKandang: _cage.text,
           warnaStraw: _strawColor ?? '',
@@ -624,54 +611,6 @@ class _BullFormPageState extends State<BullFormPage> {
                       next: true,
                       maxLength: 80,
                     ),
-                    DropdownButtonFormField<String>(
-                      initialValue: _kategori.isEmpty ? null : _kategori,
-                      isExpanded: true,
-                      borderRadius: BorderRadius.circular(16),
-                      dropdownColor: Colors.white,
-                      menuMaxHeight: 280,
-                      focusColor: AppTheme.primarySoft,
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppTheme.primary,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Kategori Bull',
-                        prefixIcon: Icon(Icons.label_outline_rounded),
-                      ),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                          value: 'Sapi Potong',
-                          child: Text('Sapi Potong'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Kerbau',
-                          child: Text('Kerbau'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Sexing',
-                          child: Text('Sexing'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Non-LSPro',
-                          child: Text('Non-LSPro'),
-                        ),
-                      ],
-                      validator: (value) => Validators.requiredText(
-                        value,
-                        label: 'Kategori Bull',
-                        maxLength: 40,
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _kategori = value ?? '';
-                          _selectedBreed = null;
-                          _creatingNewBreed = false;
-                          _breed.clear();
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 14),
                     _breedSelector(),
                     _field(
                       _age,
