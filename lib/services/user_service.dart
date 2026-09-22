@@ -25,6 +25,18 @@ class UserService {
     });
   }
 
+  Future<void> createPengunjungProfile({required User user, required String nama}) async {
+    final DateTime now = DateTime.now();
+    await _users.doc(user.uid).set(<String, dynamic>{
+      'uid': user.uid,
+      'nama': nama,
+      'email': user.email ?? '',
+      'role': AppConstants.pengunjungRole,
+      'created_at': Timestamp.fromDate(now),
+      'updated_at': Timestamp.fromDate(now),
+    });
+  }
+
   Future<void> createPetugasProfile({required User user, required String nama}) async {
     final DateTime now = DateTime.now();
     await _users.doc(user.uid).set(<String, dynamic>{
@@ -41,11 +53,11 @@ class UserService {
     final DocumentReference<Map<String, dynamic>> ref = _users.doc(user.uid);
     final DocumentSnapshot<Map<String, dynamic>> doc = await ref.get();
     if (doc.exists) return;
-    await createPetugasProfile(
+    await createPengunjungProfile(
       user: user,
       nama: user.displayName?.trim().isNotEmpty == true
           ? user.displayName!.trim()
-          : (user.email?.split('@').first ?? 'Petugas'),
+          : (user.email?.split('@').first ?? 'Pengunjung'),
     );
   }
 }
