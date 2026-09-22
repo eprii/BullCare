@@ -417,10 +417,10 @@ class _BullFormPageState extends State<BullFormPage> {
   }
 
   Future<void> _save() async {
-    if (!widget.user.isPetugas) {
+    if (!widget.user.canManageBull) {
       AppFeedback.showError(
         context,
-        'Supervisor hanya memiliki akses lihat data bull.',
+        'Supervisor memiliki akses penuh terhadap data bull.',
       );
       return;
     }
@@ -525,7 +525,7 @@ class _BullFormPageState extends State<BullFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.user.isPetugas) {
+    if (!widget.user.canManageBull) {
       return Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(title: const Text('Data Bull')),
@@ -535,7 +535,7 @@ class _BullFormPageState extends State<BullFormPage> {
             child: EmptyState(
               icon: Icons.visibility_outlined,
               title: 'Mode Supervisor',
-              message: 'Supervisor hanya dapat melihat data bull dan tidak dapat menambah atau mengubah data.',
+              message: 'Supervisor dapat menambah, mengubah, dan menghapus data bull.',
             ),
           ),
         ),
@@ -667,6 +667,14 @@ class _BullFormPageState extends State<BullFormPage> {
                         DropdownMenuItem(
                           value: BullStatus.butuhVaksin,
                           child: Text(BullStatus.butuhVaksin),
+                        ),
+                        DropdownMenuItem(
+                          value: BullStatus.mati,
+                          child: Text(BullStatus.mati),
+                        ),
+                        DropdownMenuItem(
+                          value: BullStatus.afkir,
+                          child: Text(BullStatus.afkir),
                         ),
                       ],
                       onChanged: (value) {
