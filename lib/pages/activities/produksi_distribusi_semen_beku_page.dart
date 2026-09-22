@@ -153,7 +153,7 @@ class _ProduksiDistribusiSemenBekuPageState
           },
         ),
       ),
-      floatingActionButton: widget.user.isPetugas && _hasPeriod
+      floatingActionButton: widget.user.canManageActivity && _hasPeriod
           ? FloatingActionButton(
               heroTag: null,
               onPressed: _addProduction,
@@ -174,7 +174,7 @@ class _ProduksiDistribusiSemenBekuPageState
   Future<void> _addProduction() async {
     final int? month = _selectedMonth;
     final int? year = _selectedYear;
-    if (month == null || year == null || !widget.user.isPetugas) return;
+    if (month == null || year == null || !widget.user.canManageActivity) return;
 
     await Navigator.of(context).push<String>(
       MaterialPageRoute<String>(
@@ -681,7 +681,6 @@ class _TotalsCard extends StatelessWidget {
             value: totals.jumlahProduksi,
             emphasized: true,
           ),
-          _TotalRow(label: 'Afkir', value: totals.afkir),
           const Divider(height: 24),
           const Text(
             'Distribusi Bulanan',
