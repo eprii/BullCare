@@ -62,7 +62,7 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   Future<void> _editSanitasiReminderTime(ReminderItem reminder) async {
-    if (!widget.user.isPetugas ||
+    if (!widget.user.canManageActivity ||
         _savingReminderTimes.contains(reminder.bull.id)) {
       return;
     }
@@ -254,7 +254,7 @@ class _ReminderPageState extends State<ReminderPage> {
                         reminder: reminder,
                         showCountdown: isSanitasiBerulang,
                         canEditTime:
-                            isSanitasiBerulang && widget.user.isPetugas,
+                            isSanitasiBerulang && widget.user.canManageActivity,
                         isSavingTime:
                             _savingReminderTimes.contains(reminder.bull.id),
                         onEditTime: isSanitasiBerulang
