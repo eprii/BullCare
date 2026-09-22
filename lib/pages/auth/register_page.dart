@@ -61,7 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(title: const Text('Buat Akun Petugas')),
+      appBar: AppBar(title: const Text('Buat Akun Pengunjung')),
       body: SafeArea(
         top: false,
         child: Center(
@@ -105,7 +105,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Akun dari halaman ini otomatis memiliki akses Petugas. Akun Supervisor ditetapkan oleh administrator.',
+                        'Akun dari halaman ini otomatis memiliki akses Pengunjung. Akses Petugas dan Supervisor ditetapkan oleh administrator.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppTheme.textSecondary,
