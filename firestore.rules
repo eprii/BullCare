@@ -15,98 +15,111 @@ service cloud.firestore {
       return signedIn() && userData().role == 'petugas';
     }
 
+    function isSupervisor() {
+      return signedIn() && userData().role == 'supervisor';
+    }
+
+    function canManageUserRole() {
+      return isSupervisor();
+    }
+
+    function canManageActivity() {
+      return isPetugas() || isSupervisor();
+    }
+
     match /users/{uid} {
       allow read: if signedIn();
 
       allow create: if signedIn()
                     && request.auth.uid == uid
-                    && request.resource.data.role == 'petugas';
+                    && request.resource.data.role == 'pengunjung';
 
-      allow update: if signedIn()
+      allow update: if (signedIn()
                     && request.auth.uid == uid
-                    && request.resource.data.role == resource.data.role;
+                    && request.resource.data.role == resource.data.role)
+                    || canManageUserRole();
 
       allow delete: if false;
     }
 
     match /bulls/{bullId} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if isSupervisor();
     }
 
     match /pemberian_pakan/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /sanitasi/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pemeriksaan_kesehatan/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /penimbangan/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pengukuran/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pengobatan/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pemberian_obat_cacing/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pencegahan_ektoparasit/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /bedah_bangkai/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pemotongan_bulu/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pemotongan_kuku/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /penampungan_semen/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /pengambilan_sample/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /produksi_distribusi_semen_beku/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
 
     match /bio_security/{id} {
       allow read: if signedIn();
-      allow create, update, delete: if isPetugas();
+      allow create, update, delete: if canManageActivity();
     }
   }
 }
