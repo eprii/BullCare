@@ -36,7 +36,7 @@ class AuthService {
     final User? user = credential.user;
     if (user == null) throw StateError('Akun tidak berhasil dibuat.');
     await user.updateDisplayName(nama.trim());
-    await _userService.createPetugasProfile(user: user, nama: nama.trim());
+    await _userService.createPengunjungProfile(user: user, nama: nama.trim());
   }
 
   Future<void> signOut() => _auth.signOut();
