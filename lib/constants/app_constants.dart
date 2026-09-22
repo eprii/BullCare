@@ -3,6 +3,7 @@ class AppConstants {
 
   static const String appName = 'BullCare';
   static const String appSubtitle = 'Manajemen Pemeliharaan Bull';
+  static const String pengunjungRole = 'pengunjung';
   static const String petugasRole = 'petugas';
   static const String supervisorRole = 'supervisor';
 
