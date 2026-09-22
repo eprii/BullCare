@@ -21,7 +21,7 @@ class ActivityTypePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!user.isPetugas) {
+    if (!user.canManageActivity) {
       return Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(title: const Text('Aktivitas')),
@@ -31,7 +31,7 @@ class ActivityTypePage extends StatelessWidget {
             child: EmptyState(
               icon: Icons.visibility_outlined,
               title: 'Mode Supervisor',
-              message: 'Supervisor hanya dapat melihat aktivitas dan tidak dapat mencatat aktivitas baru.',
+              message: 'Supervisor dapat mencatat dan mengelola aktivitas.',
             ),
           ),
         ),
