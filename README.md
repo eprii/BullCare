@@ -14,20 +14,25 @@ Data aktivitas disimpan sebagai histori. Nilai terbaru dapat ditampilkan sebagai
 
 ## Role
 
+### Pengunjung
+
+Pengunjung dapat melakukan registrasi mandiri dan mendapatkan akses view-only. Pengunjung tidak dapat melakukan perubahan data maupun export laporan.
+
 ### Petugas
 
-Petugas dapat membaca data dan melakukan perubahan sesuai fitur aplikasi, termasuk CRUD Bull dan aktivitas serta export laporan.
+Petugas dapat melihat data bull, mencatat dan mengelola aktivitas, serta melakukan export laporan. Petugas tidak memiliki akses CRUD Bull.
 
 ### Supervisor
 
-Supervisor bersifat **read-only** untuk data operasional. Supervisor dapat melihat dashboard, Bull, profil, aktivitas, histori, reminder, dan laporan, tetapi tidak mendapatkan akses perubahan data.
+Supervisor memiliki akses penuh untuk pengelolaan data Bull, aktivitas, dan laporan.
 
-Role yang digunakan tetap:
+Role yang digunakan:
 
+- `pengunjung`
 - `petugas`
 - `supervisor`
 
-Registrasi aplikasi membuat profil dengan role `petugas`. Role `supervisor` ditetapkan secara administratif pada data user.
+Registrasi mandiri membuat profil dengan role `pengunjung`. Role `petugas` dan `supervisor` ditetapkan sesuai kebutuhan administrasi.
 
 ## Struktur utama
 
