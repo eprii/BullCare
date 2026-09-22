@@ -69,7 +69,7 @@ class ReportExportService {
       Future.wait<List<ActivityRecord>>(
         selectedServices.map((service) => service.getAll()),
       ),
-      BullService().getBulls(),
+      BullService().getAllBulls(),
     ]);
 
     final List<List<ActivityRecord>> groups =
