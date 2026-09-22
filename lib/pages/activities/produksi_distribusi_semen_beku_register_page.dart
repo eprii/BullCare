@@ -52,7 +52,7 @@ class _ProduksiDistribusiSemenBekuRegisterPageState
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.user.isPetugas) {
+    if (!widget.user.canManageActivity) {
       return Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(title: const Text('Tambah Data Produksi')),
@@ -62,7 +62,7 @@ class _ProduksiDistribusiSemenBekuRegisterPageState
             child: EmptyState(
               icon: Icons.visibility_outlined,
               title: 'Mode Supervisor',
-              message: 'Supervisor hanya dapat melihat data produksi.',
+              message: 'Supervisor dapat mengelola data produksi.',
             ),
           ),
         ),
@@ -303,7 +303,7 @@ class _ProduksiDistribusiSemenBekuRegisterPageState
   }
 
   Future<void> _save() async {
-    if (_saving || !widget.user.isPetugas) return;
+    if (_saving || !widget.user.canManageActivity) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final String? kategori = _kategori;
     final String? bangsa = _bangsa;
