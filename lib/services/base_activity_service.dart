@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/activity_record.dart';
+import '../models/user_model.dart';
+import '../utils/permission_helper.dart';
 
 class BaseActivityService {
   BaseActivityService(this.collectionName, {FirebaseFirestore? firestore})
@@ -16,7 +18,9 @@ class BaseActivityService {
     required String petugasUid,
     required DateTime tanggal,
     required Map<String, dynamic> values,
+    UserModel? actor,
   }) async {
+    PermissionHelper.requireActivityManager(actor);
     final DateTime now = DateTime.now();
 
     final DocumentReference<Map<String, dynamic>> ref =
@@ -36,7 +40,9 @@ class BaseActivityService {
     required String id,
     required DateTime tanggal,
     required Map<String, dynamic> values,
+    UserModel? actor,
   }) {
+    PermissionHelper.requireActivityManager(actor);
     return collection.doc(id).update(<String, dynamic>{
       ...values,
       'tanggal': Timestamp.fromDate(tanggal),
@@ -44,7 +50,8 @@ class BaseActivityService {
     });
   }
 
-  Future<void> deleteActivity(String id) {
+  Future<void> deleteActivity(String id, {UserModel? actor}) {
+    PermissionHelper.requireActivityManager(actor);
     if (id.trim().isEmpty) {
       throw ArgumentError('ID aktivitas tidak boleh kosong.');
     }
