@@ -124,8 +124,9 @@ Android tetap menggunakan `MethodChannel('id.kalselprov.bib.bullcare/downloads')
 
 Konsep role tidak berubah:
 
-- `petugas`: dapat melakukan operasi perubahan data sesuai fitur.
-- `supervisor`: read-only untuk Bull dan seluruh aktivitas.
+- `pengunjung`: view-only, tidak dapat melakukan perubahan data maupun export.
+- `petugas`: dapat melakukan CRUD aktivitas dan export laporan sesuai permission. Tidak memiliki CRUD Bull.
+- `supervisor`: memiliki akses penuh termasuk CRUD Bull, CRUD aktivitas, dan export laporan.
 
 Firestore Rules sekarang memiliki rule eksplisit untuk seluruh 15 root collection aktivitas, termasuk `pencegahan_ektoparasit`, `bedah_bangkai`, `produksi_distribusi_semen_beku`, `bio_security`, dan `pengambilan_sample`.
 

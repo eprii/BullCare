@@ -20,14 +20,14 @@ Field utama:
 - `uid` string
 - `nama` string
 - `email` string
-- `role` string (`petugas` atau `supervisor`)
+- `role` string (`pengunjung`, `petugas`, atau `supervisor`)
 - `created_at` timestamp
 - `updated_at` timestamp
 
 ### Permission
 
 - User yang login dapat membaca data user.
-- Saat registrasi, user hanya dapat membuat profilnya sendiri dengan role `petugas`.
+- Saat registrasi, user hanya dapat membuat profilnya sendiri dengan role `pengunjung`.
 - User hanya dapat memperbarui dokumennya sendiri tanpa mengubah role.
 - Delete user melalui Firestore Rules tidak diizinkan.
 
@@ -241,8 +241,8 @@ Aktivitas ini sudah terdaftar pada `ActivityCatalog`, `ActivityServiceRegistry`,
 Kondisi rules saat ini:
 
 - Semua data Bull dan aktivitas dapat dibaca oleh user yang sudah login.
-- Create/update/delete Bull hanya untuk role `petugas`.
-- Create/update/delete seluruh 15 collection aktivitas hanya untuk role `petugas`.
-- Role `supervisor` bersifat read-only terhadap Bull dan aktivitas.
+- Create/update/delete Bull hanya untuk role `supervisor`.
+- Create/update/delete seluruh 15 collection aktivitas dapat dilakukan oleh role `petugas` dan `supervisor`.
+- Role `pengunjung` bersifat read-only. Role `petugas` memiliki akses pengelolaan aktivitas dan export sesuai permission. Role `supervisor` memiliki akses penuh sesuai permission.
 
 Perubahan schema atau permission berikutnya harus mengikuti implementasi source aktual dan tidak boleh mengubah konsep role tanpa kebutuhan eksplisit.
