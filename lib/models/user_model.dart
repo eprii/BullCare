@@ -18,15 +18,20 @@ class UserModel {
     required this.updated_at,
   });
 
+  bool get isPengunjung => role.toLowerCase() == AppConstants.pengunjungRole;
   bool get isPetugas => role.toLowerCase() == AppConstants.petugasRole;
   bool get isSupervisor => role.toLowerCase() == AppConstants.supervisorRole;
+
+  bool get canManageActivity => isPetugas || isSupervisor;
+  bool get canManageBull => isSupervisor;
+  bool get canExportReport => isPetugas || isSupervisor;
 
   factory UserModel.fromMap(String uid, Map<String, dynamic> map) {
     return UserModel(
       uid: uid,
       nama: map['nama']?.toString() ?? '',
       email: map['email']?.toString() ?? '',
-      role: map['role']?.toString() ?? AppConstants.petugasRole,
+      role: map['role']?.toString() ?? AppConstants.pengunjungRole,
       created_at: dateTimeFromFirestore(map['created_at']),
       updated_at: dateTimeFromFirestore(map['updated_at']),
     );
