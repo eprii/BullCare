@@ -47,7 +47,7 @@ class _BullListPageState extends State<BullListPage> {
   }
 
   Future<void> _addBull() async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageBull) return;
 
     final String? id = await Navigator.of(context).push<String>(
       MaterialPageRoute<String>(
@@ -91,7 +91,7 @@ class _BullListPageState extends State<BullListPage> {
           ),
         ),
       ),
-      floatingActionButton: !widget.selectionMode && widget.user.isPetugas
+      floatingActionButton: !widget.selectionMode && widget.user.canManageBull
           ? FloatingActionButton(
               onPressed: _addBull,
               tooltip: 'Tambah Bull',
@@ -150,11 +150,11 @@ class _BullListPageState extends State<BullListPage> {
                           ? 'Belum ada data bull'
                           : 'Bull tidak ditemukan',
                       message: noFilter
-                          ? widget.user.isPetugas
+                          ? widget.user.canManageBull
                               ? 'Tambahkan data bull pertama untuk mulai mencatat aktivitas pemeliharaan.'
                               : 'Belum ada data bull yang dapat ditampilkan.'
                           : 'Ubah pencarian atau filter dan coba kembali.',
-                      action: widget.user.isPetugas && noFilter
+                      action: widget.user.canManageBull && noFilter
                           ? FilledButton.icon(
                               onPressed: _addBull,
                               icon: const Icon(Icons.add_rounded),
@@ -167,7 +167,7 @@ class _BullListPageState extends State<BullListPage> {
                         0,
                         0,
                         0,
-                        widget.selectionMode || !widget.user.isPetugas
+                        widget.selectionMode || !widget.user.canManageBull
                             ? 24
                             : 96,
                       ),
@@ -609,7 +609,7 @@ class _BullListPageState extends State<BullListPage> {
                               selected: tempStatus.isEmpty,
                               onTap: () => setSheetState(() => tempStatus = ''),
                             ),
-                            ...BullStatus.values.map(
+                            ...BullStatus.activeValues.map(
                               (String status) => _FilterOptionChip(
                                 label: status,
                                 selected: tempStatus == status,
