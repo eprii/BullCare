@@ -20,6 +20,7 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/straw_visual.dart';
 import '../activities/activity_detail_page.dart';
 import '../activities/activity_form_page.dart';
 import '../activities/activity_type_page.dart';
@@ -57,7 +58,7 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _addActivity(BullModel bull) async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageActivity) return;
 
     final String? activityLabel = await Navigator.of(context).push<String>(
       MaterialPageRoute<String>(
@@ -75,7 +76,7 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _showBullActions(BullModel bull) async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageBull) return;
 
     final String? action = await showModalBottomSheet<String>(
       context: context,
@@ -169,7 +170,7 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _editBull(BullModel bull) async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageBull) return;
 
     final String? id = await Navigator.of(context).push<String>(
       MaterialPageRoute<String>(
@@ -183,7 +184,7 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _delete(BullModel bull) async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageBull) return;
 
     final bool confirmed = await showConfirmationDialog(
       context,
@@ -211,7 +212,7 @@ class _BullProfilePageState extends State<BullProfilePage> {
   }
 
   Future<void> _editActivity(BullModel bull, ActivityRecord record) async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageBull) return;
 
     final bool? saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
@@ -264,7 +265,7 @@ class _BullProfilePageState extends State<BullProfilePage> {
           backgroundColor: AppTheme.background,
           appBar: AppBar(
             title: const Text('Detail Bull'),
-            actions: widget.user.isPetugas
+            actions: widget.user.canManageBull
                 ? <Widget>[
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -336,7 +337,7 @@ class _BullProfilePageState extends State<BullProfilePage> {
               );
             },
           ),
-          floatingActionButton: widget.user.isPetugas
+          floatingActionButton: widget.user.canManageBull
               ? FloatingActionButton.extended(
                   onPressed: () => _addActivity(bull),
                   icon: const Icon(Icons.add_rounded),
@@ -464,6 +465,53 @@ class _HeroCard extends StatelessWidget {
             clipBehavior: Clip.none,
             children: <Widget>[
               Positioned.fill(child: _BullHeroBackground(bull: bull)),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  width: 162,
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xEFFFFFFF),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white, width: 1.5),
+                    boxShadow: const <BoxShadow>[
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 14,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Text(
+                        'Warna straw',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        bull.warna_straw.trim().isEmpty ? '-' : bull.warna_straw,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      StrawVisual(colorName: bull.warna_straw),
+                    ],
+                  ),
+                ),
+              ),
               Positioned(
                 right: 12,
                 bottom: 10,
@@ -914,7 +962,7 @@ class _HistoryContent extends StatelessWidget {
                   ),
                 );
               },
-              trailing: user.isPetugas
+              trailing: user.canManageBull
                   ? IconButton(
                       onPressed: () => onEdit(record),
                       icon: const Icon(Icons.edit_outlined),
