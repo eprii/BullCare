@@ -13,6 +13,8 @@ class PengambilanSampleModel {
   final bool swab;
   final bool feses;
   final String keterangan;
+  final String? attachment_name;
+  final String? attachment_base64;
   final DateTime created_at;
   final DateTime updated_at;
 
@@ -28,6 +30,8 @@ class PengambilanSampleModel {
     required this.swab,
     required this.feses,
     required this.keterangan,
+    required this.attachment_name,
+    required this.attachment_base64,
     required this.created_at,
     required this.updated_at,
   });
@@ -45,6 +49,8 @@ class PengambilanSampleModel {
       swab: map['swab'] == true,
       feses: map['feses'] == true,
       keterangan: map['keterangan']?.toString() ?? '',
+      attachment_name: map['attachment_name']?.toString(),
+      attachment_base64: map['attachment_base64']?.toString(),
       created_at: dateTimeFromFirestore(map['created_at']),
       updated_at: dateTimeFromFirestore(map['updated_at']),
     );
@@ -62,6 +68,8 @@ class PengambilanSampleModel {
       'swab': swab,
       'feses': feses,
       'keterangan': keterangan,
+      'attachment_name': attachment_name,
+      'attachment_base64': attachment_base64,
       'created_at': Timestamp.fromDate(created_at),
       'updated_at': Timestamp.fromDate(updated_at),
     };
@@ -79,6 +87,8 @@ class PengambilanSampleModel {
     bool? swab,
     bool? feses,
     String? keterangan,
+    String? attachment_name,
+    String? attachment_base64,
     DateTime? created_at,
     DateTime? updated_at,
   }) {
@@ -94,6 +104,8 @@ class PengambilanSampleModel {
       swab: swab ?? this.swab,
       feses: feses ?? this.feses,
       keterangan: keterangan ?? this.keterangan,
+      attachment_name: attachment_name ?? this.attachment_name,
+      attachment_base64: attachment_base64 ?? this.attachment_base64,
       created_at: created_at ?? this.created_at,
       updated_at: updated_at ?? this.updated_at,
     );
