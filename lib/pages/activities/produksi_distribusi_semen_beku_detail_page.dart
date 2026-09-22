@@ -76,7 +76,7 @@ class _ProduksiDistribusiSemenBekuDetailPageState
                 _DataCard(record: record),
                 const SizedBox(height: 14),
                 _AuditCard(record: record),
-                if (widget.user.isPetugas) ...<Widget>[
+                if (widget.user.canManageActivity) ...<Widget>[
                   const SizedBox(height: 14),
                   FilledButton.icon(
                     onPressed: () => _edit(record),
@@ -300,10 +300,6 @@ class _DataCard extends StatelessWidget {
           label: 'Jumlah Produksi',
           value: _displayNumber(record.data['jumlah_produksi']),
           emphasized: true,
-        ),
-        _DetailRow(
-          label: 'Afkir',
-          value: _displayNumber(record.data['afkir']),
         ),
         _DetailRow(
           label: 'Distribusi Komandan',
