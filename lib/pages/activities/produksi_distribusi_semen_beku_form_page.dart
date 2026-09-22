@@ -319,7 +319,7 @@ class _ProduksiDistribusiSemenBekuFormPageState
   }
 
   Future<void> _save() async {
-    if (!widget.user.isPetugas || _saving) return;
+    if (!widget.user.canManageActivity || _saving) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final int? stockTahun = _optionalValue(_stockTahun);
     if (stockTahun == null) return;
