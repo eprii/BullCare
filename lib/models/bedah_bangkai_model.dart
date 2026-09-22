@@ -14,6 +14,8 @@ class BedahBangkaiModel {
   final String keterangan;
   final String petugas_uid;
   final String nama_petugas;
+  final String? attachment_name;
+  final String? attachment_base64;
   final DateTime created_at;
   final DateTime updated_at;
 
@@ -29,6 +31,8 @@ class BedahBangkaiModel {
     required this.keterangan,
     required this.petugas_uid,
     required this.nama_petugas,
+    required this.attachment_name,
+    required this.attachment_base64,
     required this.created_at,
     required this.updated_at,
   });
@@ -47,6 +51,8 @@ class BedahBangkaiModel {
       keterangan: map['keterangan']?.toString() ?? '',
       petugas_uid: map['petugas_uid']?.toString() ?? '',
       nama_petugas: map['nama_petugas']?.toString() ?? '',
+      attachment_name: map['attachment_name']?.toString(),
+      attachment_base64: map['attachment_base64']?.toString(),
       created_at: dateTimeFromFirestore(map['created_at']),
       updated_at: dateTimeFromFirestore(map['updated_at']),
     );
@@ -69,6 +75,8 @@ class BedahBangkaiModel {
       'keterangan': keterangan,
       'petugas_uid': petugas_uid,
       'nama_petugas': nama_petugas,
+      'attachment_name': attachment_name,
+      'attachment_base64': attachment_base64,
       'created_at': Timestamp.fromDate(created_at),
       'updated_at': Timestamp.fromDate(updated_at),
     };
