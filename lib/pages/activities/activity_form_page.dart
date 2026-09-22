@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
+import '../../utils/activity_attachment_helper.dart';
 
 import '../../models/activity_definition.dart';
 import '../../models/activity_record.dart';
@@ -51,6 +54,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   late DateTime _date;
   bool _loading = false;
   String? _booleanError;
+  ActivityAttachment? _attachment;
 
   bool get _editing => widget.existing != null;
   bool get _isHealthCheck =>
@@ -199,6 +203,38 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     return true;
   }
 
+
+  bool get _supportsAttachment =>
+      widget.definition.collectionName == 'bedah_bangkai' ||
+      widget.definition.collectionName == 'pengambilan_sample';
+
+  Future<void> _pickAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      withData: true,
+      type: FileType.any,
+    );
+    if (result == null || result.files.single.bytes == null || !mounted) {
+      return;
+    }
+
+    final Uint8List bytes = result.files.single.bytes!;
+    if (!ActivityAttachmentHelper.isAllowed(bytes)) {
+      AppFeedback.showError(
+        context,
+        'Ukuran file maksimal 2 MB.',
+      );
+      return;
+    }
+
+    setState(() {
+      _attachment = ActivityAttachment(
+        name: result.files.single.name,
+        base64: ActivityAttachmentHelper.encode(bytes),
+        bytes: bytes.lengthInBytes,
+      );
+    });
+  }
+
   Map<String, dynamic> _collectValues() {
     final Map<String, dynamic> values = <String, dynamic>{
       'nama_petugas': _petugasController.text.trim(),
@@ -223,6 +259,10 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
         values['${key}_normal'] = status == 'normal';
         values['${key}_abn'] = status == 'abnormal';
       }
+    }
+    if (_attachment != null) {
+      values['attachment_name'] = _attachment!.name;
+      values['attachment_base64'] = _attachment!.base64;
     }
     return values;
   }
@@ -258,10 +298,10 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   }
 
   Future<void> _save() async {
-    if (!widget.user.isPetugas) {
+    if (!widget.user.canManageActivity) {
       AppFeedback.showError(
         context,
-        'Supervisor hanya memiliki akses lihat aktivitas.',
+        'Anda tidak memiliki izin untuk mengubah aktivitas.',
       );
       return;
     }
@@ -301,6 +341,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
           id: widget.existing!.id,
           tanggal: _date,
           values: values,
+          actor: widget.user,
         );
       } else {
         await service.addActivity(
@@ -308,6 +349,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
           petugasUid: widget.user.uid,
           tanggal: _date,
           values: values,
+          actor: widget.user,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -327,7 +369,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.user.isPetugas) {
+    if (!widget.user.canManageActivity) {
       return Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(title: const Text('Aktivitas')),
@@ -337,7 +379,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
             child: EmptyState(
               icon: Icons.visibility_outlined,
               title: 'Mode Supervisor',
-              message: 'Supervisor hanya dapat melihat riwayat dan detail aktivitas tanpa menambah atau mengubah data.',
+              message: 'Supervisor dapat menambah, mengubah, dan menghapus aktivitas.',
             ),
           ),
         ),
@@ -461,6 +503,18 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     _editing ? 'Simpan Perubahan' : 'Simpan Aktivitas',
                   ),
                 ),
+                if (_supportsAttachment) ...<Widget>[
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: _pickAttachment,
+                    icon: const Icon(Icons.attach_file),
+                    label: Text(
+                      _attachment == null
+                          ? 'Tambah Foto/Dokumen (maks. 2 MB)'
+                          : 'Lampiran: ${_attachment!.name}',
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
