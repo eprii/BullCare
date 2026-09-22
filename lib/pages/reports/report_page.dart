@@ -655,6 +655,18 @@ class _ReportPageState extends State<ReportPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.user.canExportReport) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFCFCFB),
+        body: SafeArea(
+          child: AppPageContainer(
+            child: Center(
+              child: Text('Anda tidak memiliki akses export laporan.'),
+            ),
+          ),
+        ),
+      );
+    }
     final Color accent = _format == ReportFileFormat.pdf
         ? AppTheme.primary
         : _format == ReportFileFormat.word
