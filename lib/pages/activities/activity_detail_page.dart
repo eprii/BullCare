@@ -124,10 +124,6 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
             value: _displayNumber(record.data['jumlah_produksi']),
           ),
           _DetailRow(
-            label: 'Afkir',
-            value: _displayNumber(record.data['afkir']),
-          ),
-          _DetailRow(
             label: 'Distribusi Komandan',
             value: _displayNumber(record.data['distribusi_komandan']),
           ),
@@ -211,6 +207,11 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
       const SizedBox(height: 14),
       _petugasCard(record),
       const SizedBox(height: 14),
+      if (_hasAttachment(record)) ...<Widget>[
+        const SizedBox(height: 14),
+        _attachmentCard(record),
+      ],
+      const SizedBox(height: 14),
       _SectionCard(
         title: 'Informasi Pencatatan',
         icon: Icons.info_outline,
@@ -231,6 +232,30 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
         ],
       ),
     ];
+  }
+
+
+  bool _hasAttachment(ActivityRecord record) {
+    final String attachment =
+        record.data['attachment_name']?.toString().trim() ?? '';
+    return attachment.isNotEmpty;
+  }
+
+  Widget _attachmentCard(ActivityRecord record) {
+    return _SectionCard(
+      title: 'Dokumentasi Lampiran',
+      icon: Icons.attach_file_outlined,
+      children: <Widget>[
+        _DetailRow(
+          label: 'Nama file',
+          value: record.data['attachment_name']?.toString() ?? '-',
+        ),
+        const _DetailRow(
+          label: 'Penyimpanan',
+          value: 'Lampiran tersimpan sebagai Base64',
+        ),
+      ],
+    );
   }
 
   Widget _petugasCard(ActivityRecord record) {
