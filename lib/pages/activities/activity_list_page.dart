@@ -72,13 +72,27 @@ class _ActivityListPageState extends State<ActivityListPage> {
         BullService().getBulls(),
       ],
     );
-    final List<ActivityRecord> records = results[0] as List<ActivityRecord>;
+    final List<ActivityRecord> allRecords =
+        results[0] as List<ActivityRecord>;
     final List<BullModel> bulls = results[1] as List<BullModel>;
+    final Map<String, BullModel> bullMap = <String, BullModel>{
+      for (final BullModel bull in bulls) bull.id: bull,
+    };
+
+    // Aktivitas tetap disimpan untuk histori, tetapi tampilan normal hanya
+    // menampilkan aktivitas yang memiliki referensi bull yang valid.
+    // Data lama/orphaned record tidak dihapus dari Firestore.
+    final List<ActivityRecord> records = allRecords
+        .where(
+          (record) =>
+              record.collectionName == 'produksi_distribusi_semen_beku' ||
+              bullMap.containsKey(record.bull_id),
+        )
+        .toList(growable: false);
+
     return ActivityListData(
       records: records,
-      bulls: <String, BullModel>{
-        for (final BullModel bull in bulls) bull.id: bull,
-      },
+      bulls: bullMap,
     );
   }
 
@@ -88,7 +102,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 
   Future<void> _add() async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageActivity) return;
 
     final BullModel? bull = await Navigator.of(context).push<BullModel>(
       MaterialPageRoute<BullModel>(
@@ -116,7 +130,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 
   Future<void> _edit(BullModel bull, ActivityRecord record) async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageActivity) return;
 
     final bool? saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
@@ -139,7 +153,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 
   Future<void> _delete(ActivityRecord record, BullModel? bull) async {
-    if (!widget.user.isPetugas) return;
+    if (!widget.user.canManageActivity) return;
 
     final bool confirmed = await showConfirmationDialog(
       context,
@@ -157,7 +171,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
     try {
       await ActivityServiceRegistry.serviceFor(
         record.collectionName,
-      ).deleteActivity(record.id);
+      ).deleteActivity(record.id, actor: widget.user);
 
       if (!mounted) return;
       setState(_reload);
@@ -241,11 +255,11 @@ class _ActivityListPageState extends State<ActivityListPage> {
                           icon: Icons.history_toggle_off,
                           title: 'Belum ada $selectedLabel',
                           message: _filter.isEmpty
-                              ? widget.user.isPetugas
+                              ? widget.user.canManageActivity
                                   ? 'Pilih bull dan catat aktivitas pemeliharaan.'
                                   : 'Belum ada aktivitas pemeliharaan yang dapat ditampilkan.'
                               : 'Belum ada aktivitas pada kategori yang dipilih.',
-                          action: widget.user.isPetugas
+                          action: widget.user.canManageActivity
                               ? FilledButton.icon(
                                   onPressed: _add,
                                   icon: const Icon(Icons.add_rounded),
@@ -258,7 +272,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                           child: _ActivityTimeline(
                             records: filteredRecords,
                             bulls: data.bulls,
-                            canEdit: widget.user.isPetugas,
+                            canEdit: widget.user.canManageActivity,
                             onEdit: _edit,
                             onDelete: _delete,
                           ),
@@ -269,7 +283,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
           );
         },
       ),
-      floatingActionButton: widget.user.isPetugas
+      floatingActionButton: widget.user.canManageActivity
           ? FloatingActionButton(
               heroTag: null,
               onPressed: _add,
