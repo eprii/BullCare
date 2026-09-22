@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/bull_model.dart';
+import '../utils/bull_status.dart';
 
 class BullService {
   BullService({FirebaseFirestore? firestore})
@@ -14,6 +15,7 @@ class BullService {
     return _bulls.orderBy('nama').snapshots().map((snapshot) {
       return snapshot.docs
           .map((doc) => BullModel.fromMap(doc.id, doc.data()))
+          .where((bull) => BullStatus.isAktif(bull.status))
           .toList(growable: false);
     });
   }
@@ -26,8 +28,19 @@ class BullService {
   }
 
   Future<List<BullModel>> getBulls() async {
-    final QuerySnapshot<Map<String, dynamic>> snapshot = await _bulls.orderBy('nama').get();
-    return snapshot.docs.map((doc) => BullModel.fromMap(doc.id, doc.data())).toList();
+    final List<BullModel> bulls = await getAllBulls();
+    return bulls.where((bull) => BullStatus.isAktif(bull.status)).toList();
+  }
+
+  /// Mengambil seluruh data Bull untuk kebutuhan arsip/laporan.
+  /// Tidak melakukan filtering status agar data historis seperti Mati/Afkir
+  /// tetap dapat digunakan pada export yang membutuhkan data lengkap.
+  Future<List<BullModel>> getAllBulls() async {
+    final QuerySnapshot<Map<String, dynamic>> snapshot =
+        await _bulls.orderBy('nama').get();
+    return snapshot.docs
+        .map((doc) => BullModel.fromMap(doc.id, doc.data()))
+        .toList();
   }
 
   Future<bool> isKodeBullInUse(
